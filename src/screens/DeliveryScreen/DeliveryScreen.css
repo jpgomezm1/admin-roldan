@@ -1,0 +1,18 @@
+.pedido-recibido {
+    background-color: #f0f8ff;
+  }
+  
+  .pedido-confirmado {
+    background-color: #ffffcc;
+  }
+  
+  .pedido-enviado {
+    background-color: #d0ffd0;
+  }
+  
+  .pedido-rechazado {
+    background-color: #ffd0d0;
+  }
+
+  
+  
