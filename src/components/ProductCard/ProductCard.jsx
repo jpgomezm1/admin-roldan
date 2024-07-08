@@ -29,7 +29,7 @@ function ProductoCard({ producto, onDelete, onEdit }) {
             {producto.nombre}
           </Typography>
           <Typography variant="body1" color="text.secondary" sx={{ fontSize: '1.2rem' }}>
-            Precio: {formatCurrency(producto.precio)}
+            Precio Venta: {formatCurrency(producto.precio)}
           </Typography>
           <Typography variant="body2" color="text.secondary" sx={{ marginBottom: 2 }}>
             Categoría: {producto.categoria}

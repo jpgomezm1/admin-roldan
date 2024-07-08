@@ -10,7 +10,7 @@ import TabPanel from '../GastosScreen/TabPanel';
 const PaginaProductos = () => {
     const [open, setOpen] = useState(false);
     const [productos, setProductos] = useState([]);
-    const [nuevoProducto, setNuevoProducto] = useState({ nombre: '', precio: '', imagen: null, categoria: '', descripcion: '' });
+    const [nuevoProducto, setNuevoProducto] = useState({ nombre: '', precioBase: '', iva: 19, ipo: '', imagen: null, categoria: '', descripcion: '' });
     const [editMode, setEditMode] = useState(false);
     const [productoId, setProductoId] = useState(null);
     const [loading, setLoading] = useState(false);
@@ -33,38 +33,71 @@ const PaginaProductos = () => {
         setLoading(false);
     };
 
+    const calculatePrecioVenta = () => {
+        const { precioBase, iva, ipo } = nuevoProducto;
+        if (precioBase && iva && ipo) {
+            const base = parseFloat(precioBase);
+            const ivaAmount = base * (iva / 100);
+            const ipoAmount = base * (ipo / 100);
+            return base + ivaAmount + ipoAmount;
+        }
+        return 0;
+    };
+
     const handleAddProducto = async () => {
         setLoading(true);
-        const formData = new FormData();
-        formData.append('nombre', nuevoProducto.nombre);
-        formData.append('precio', nuevoProducto.precio);
-        formData.append('categoria', nuevoProducto.categoria);
-        formData.append('descripcion', nuevoProducto.descripcion || '');
-        if (nuevoProducto.imagen) {
-            formData.append('imagen', nuevoProducto.file);
-        }
-
-        try {
-            const response = await axios({
-                method: editMode ? 'PUT' : 'POST',
-                url: `${apiBaseUrl}/productos${editMode ? `/${productoId}` : ''}`,
-                data: formData,
-                headers: { 'Content-Type': 'multipart/form-data' },
-            });
-            if (editMode) {
+    
+        const productoData = {
+            nombre: nuevoProducto.nombre,
+            precio: calculatePrecioVenta(),
+            categoria: nuevoProducto.categoria,
+            descripcion: nuevoProducto.descripcion || '',
+            ipo: nuevoProducto.ipo,
+        };
+    
+        if (editMode) {
+            // Enviar datos como JSON para la solicitud PUT
+            try {
+                const response = await axios.put(`${apiBaseUrl}/productos/${productoId}`, productoData, {
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                });
                 setProductos(productos.map(p => (p.id === productoId ? response.data : p)));
-            } else {
-                setProductos([...productos, response.data]);
+                handleClose();
+            } catch (error) {
+                console.error('Error al editar el producto', error.response);
             }
-            handleClose();
-        } catch (error) {
-            console.error('Error al agregar o editar el producto', error.response);
+        } else {
+            // Enviar datos como FormData para la solicitud POST
+            const formData = new FormData();
+            formData.append('nombre', nuevoProducto.nombre);
+            formData.append('precio', calculatePrecioVenta());
+            formData.append('categoria', nuevoProducto.categoria);
+            formData.append('descripcion', nuevoProducto.descripcion || '');
+            formData.append('ipo', nuevoProducto.ipo);
+            if (nuevoProducto.imagen) {
+                formData.append('imagen', nuevoProducto.file);
+            }
+    
+            try {
+                const response = await axios.post(`${apiBaseUrl}/productos`, formData, {
+                    headers: {
+                        'Content-Type': 'multipart/form-data',
+                    },
+                });
+                setProductos([...productos, response.data]);
+                handleClose();
+            } catch (error) {
+                console.error('Error al agregar el producto', error.response);
+            }
         }
+    
         setLoading(false);
     };
 
     const handleEdit = producto => {
-        setNuevoProducto({ ...producto, imagen: null });
+        setNuevoProducto({ ...producto, precioBase: producto.precio, iva: 19, ipo: producto.ipo });
         setProductoId(producto.id);
         setEditMode(true);
         setOpen(true);
@@ -88,17 +121,17 @@ const PaginaProductos = () => {
     const handleClose = () => {
         setOpen(false);
         setEditMode(false);
-        setNuevoProducto({ nombre: '', precio: '', imagen: null, categoria: '', descripcion: '' });
+        setNuevoProducto({ nombre: '', precioBase: '', iva: 19, ipo: '', imagen: null, categoria: '', descripcion: '' });
     };
 
     const handleChange = (e) => {
-        const { name, files } = e.target;
+        const { name, value, files } = e.target;
         if (name === 'imagen' && files) {
             const file = files[0];
             const imageUrl = URL.createObjectURL(file);
             setNuevoProducto(prev => ({ ...prev, imagen: imageUrl, file }));
         } else {
-            setNuevoProducto(prev => ({ ...prev, [name]: e.target.value }));
+            setNuevoProducto(prev => ({ ...prev, [name]: value }));
         }
     };
 
@@ -166,5 +199,3 @@ const PaginaProductos = () => {
 };
 
 export default PaginaProductos;
-
-

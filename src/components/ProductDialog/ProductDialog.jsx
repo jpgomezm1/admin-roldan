@@ -5,6 +5,21 @@ import {
   FormControl, InputLabel, Select, MenuItem, CircularProgress, Card, CardMedia
 } from '@mui/material';
 import AddCircleOutlineIcon from '@mui/icons-material/AddCircleOutline';
+import { styled } from '@mui/system';
+
+const ReadOnlyTextField = styled(TextField)({
+  backgroundColor: '#f0f0f0',
+  borderRadius: '4px',
+});
+
+const formatCurrency = (value) => {
+  return new Intl.NumberFormat('es-CO', {
+    style: 'currency',
+    currency: 'COP',
+    minimumFractionDigits: 0,
+    maximumFractionDigits: 0
+  }).format(value);
+};
 
 function ProductoDialog({ open, handleClose, handleChange, handleAddProducto, nuevoProducto, loading, editMode }) {
   const [categorias, setCategorias] = useState([]);
@@ -24,6 +39,17 @@ function ProductoDialog({ open, handleClose, handleChange, handleAddProducto, nu
     fetchCategorias();
   }, [apiBaseUrl]);
 
+  const calculatePrecioVenta = () => {
+    const { precioBase, iva, ipo } = nuevoProducto;
+    if (precioBase) {
+      const base = parseFloat(precioBase);
+      const ivaAmount = base * (iva / 100);
+      const ipoAmount = base * (ipo / 100);
+      return base + ivaAmount + ipoAmount;
+    }
+    return 0;
+  };
+
   return (
     <Dialog open={open} onClose={handleClose}>
       <DialogTitle>{editMode ? 'Editar Producto' : 'Añadir Nuevo Producto'}</DialogTitle>
@@ -42,14 +68,48 @@ function ProductoDialog({ open, handleClose, handleChange, handleAddProducto, nu
         />
         <TextField
           margin="dense"
-          id="precio"
-          label="Precio"
+          id="precioBase"
+          label="Precio Base"
           type="number"
           fullWidth
           variant="outlined"
-          name="precio"
-          value={nuevoProducto.precio}
+          name="precioBase"
+          value={nuevoProducto.precioBase}
           onChange={handleChange}
+        />
+        <TextField
+          margin="dense"
+          id="iva"
+          label="IVA (%)"
+          type="number"
+          fullWidth
+          variant="outlined"
+          name="iva"
+          value={nuevoProducto.iva}
+          onChange={handleChange}
+        />
+        <TextField
+          margin="dense"
+          id="ipo"
+          label="IPO (%)"
+          type="number"
+          fullWidth
+          variant="outlined"
+          name="ipo"
+          value={nuevoProducto.ipo}
+          onChange={handleChange}
+        />
+        <ReadOnlyTextField
+          margin="dense"
+          id="precioVenta"
+          label="Precio de Venta"
+          type="text"
+          fullWidth
+          variant="outlined"
+          value={formatCurrency(calculatePrecioVenta())}
+          InputProps={{
+            readOnly: true,
+          }}
         />
         <TextField
           margin="dense"
@@ -85,7 +145,7 @@ function ProductoDialog({ open, handleClose, handleChange, handleAddProducto, nu
           variant="contained"
           component="label"
           startIcon={<AddCircleOutlineIcon />}
-          size="medium" sx={{mt: 2, backgroundColor: '#5E55FE', color: 'white', borderRadius: '10px', '&:hover': { backgroundColor: '#7b45a1' },}}
+          size="medium" sx={{ mt: 2, backgroundColor: '#5E55FE', color: 'white', borderRadius: '10px', '&:hover': { backgroundColor: '#7b45a1' }, }}
         >
           {editMode ? "Reemplazar Imagen" : "Subir Imagen"}
           <input
