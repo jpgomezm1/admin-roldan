@@ -1,16 +1,18 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
-import { Button, Grid, Container, CircularProgress, Tabs, Tab, AppBar } from '@mui/material';
+import { Button, Grid, Container, CircularProgress, Tabs, Tab, AppBar, Dialog, DialogTitle, DialogContent, DialogActions } from '@mui/material';
 import AddCircleOutlineIcon from '@mui/icons-material/AddCircleOutline';
 import ProductoCard from '../../components/ProductCard/ProductCard';
 import ProductoDialog from '../../components/ProductDialog/ProductDialog';
-import ListaPrecios from './ListaPrecios'; // Importamos el nuevo componente
+import ListaPrecios from './ListaPrecios';
 import TabPanel from '../GastosScreen/TabPanel';
 
 const PaginaProductos = () => {
     const [open, setOpen] = useState(false);
+    const [confirmOpen, setConfirmOpen] = useState(false);
     const [productos, setProductos] = useState([]);
-    const [nuevoProducto, setNuevoProducto] = useState({ nombre: '', precioBase: '', iva: 19, ipo: '', imagen: null, categoria: '', descripcion: '' });
+    const [nuevoProducto, setNuevoProducto] = useState({ nombre: '', precioBase: '', iva: 5, ipo: '', imagen: null, categoria: '', descripcion: '' });
+    const [productoAEliminar, setProductoAEliminar] = useState(null);
     const [editMode, setEditMode] = useState(false);
     const [productoId, setProductoId] = useState(null);
     const [loading, setLoading] = useState(false);
@@ -38,7 +40,7 @@ const PaginaProductos = () => {
         if (precioBase && iva && ipo) {
             const base = parseFloat(precioBase);
             const ivaAmount = base * (iva / 100);
-            const ipoAmount = base * (ipo / 100);
+            const ipoAmount = parseFloat(ipo);
             return base + ivaAmount + ipoAmount;
         }
         return 0;
@@ -49,6 +51,7 @@ const PaginaProductos = () => {
     
         const productoData = {
             nombre: nuevoProducto.nombre,
+            precio_base: nuevoProducto.precioBase,
             precio: calculatePrecioVenta(),
             categoria: nuevoProducto.categoria,
             descripcion: nuevoProducto.descripcion || '',
@@ -56,7 +59,6 @@ const PaginaProductos = () => {
         };
     
         if (editMode) {
-            // Enviar datos como JSON para la solicitud PUT
             try {
                 const response = await axios.put(`${apiBaseUrl}/productos/${productoId}`, productoData, {
                     headers: {
@@ -69,9 +71,9 @@ const PaginaProductos = () => {
                 console.error('Error al editar el producto', error.response);
             }
         } else {
-            // Enviar datos como FormData para la solicitud POST
             const formData = new FormData();
             formData.append('nombre', nuevoProducto.nombre);
+            formData.append('precio_base', nuevoProducto.precioBase);
             formData.append('precio', calculatePrecioVenta());
             formData.append('categoria', nuevoProducto.categoria);
             formData.append('descripcion', nuevoProducto.descripcion || '');
@@ -97,17 +99,28 @@ const PaginaProductos = () => {
     };
 
     const handleEdit = producto => {
-        setNuevoProducto({ ...producto, precioBase: producto.precio, iva: 19, ipo: producto.ipo });
+        setNuevoProducto({ 
+            ...producto, 
+            precioBase: producto.precio_base,
+            iva: 5, 
+            ipo: producto.ipo 
+        });
         setProductoId(producto.id);
         setEditMode(true);
         setOpen(true);
     };
 
-    const handleDelete = async producto => {
+    const handleDelete = producto => {
+        setProductoAEliminar(producto);
+        setConfirmOpen(true);
+    };
+
+    const confirmDelete = async () => {
         setLoading(true);
         try {
-            await axios.delete(`${apiBaseUrl}/productos/${producto.id}`);
-            setProductos(productos.filter(p => p.id !== producto.id));
+            await axios.delete(`${apiBaseUrl}/productos/${productoAEliminar.id}`);
+            setProductos(productos.filter(p => p.id !== productoAEliminar.id));
+            setConfirmOpen(false);
         } catch (error) {
             console.error('Error al eliminar el producto', error);
         }
@@ -121,7 +134,7 @@ const PaginaProductos = () => {
     const handleClose = () => {
         setOpen(false);
         setEditMode(false);
-        setNuevoProducto({ nombre: '', precioBase: '', iva: 19, ipo: '', imagen: null, categoria: '', descripcion: '' });
+        setNuevoProducto({ nombre: '', precioBase: '', iva: 5, ipo: '', imagen: null, categoria: '', descripcion: '' });
     };
 
     const handleChange = (e) => {
@@ -189,6 +202,23 @@ const PaginaProductos = () => {
                         loading={loading}
                         editMode={editMode}
                     />
+                    <Dialog
+                        open={confirmOpen}
+                        onClose={() => setConfirmOpen(false)}
+                    >
+                        <DialogTitle>Confirmar Eliminación</DialogTitle>
+                        <DialogContent>
+                            ¿Estás seguro de que deseas eliminar el producto {productoAEliminar && productoAEliminar.nombre}?
+                        </DialogContent>
+                        <DialogActions>
+                            <Button onClick={() => setConfirmOpen(false)} sx={{ color: '#5E55FE'}}>
+                                Cancelar
+                            </Button>
+                            <Button onClick={confirmDelete} sx={{ color: 'red'}}>
+                                Eliminar
+                            </Button>
+                        </DialogActions>
+                    </Dialog>
                 </TabPanel>
                 <TabPanel value={tabValue} index={1}>
                     <ListaPrecios />
@@ -199,3 +229,5 @@ const PaginaProductos = () => {
 };
 
 export default PaginaProductos;
+
+

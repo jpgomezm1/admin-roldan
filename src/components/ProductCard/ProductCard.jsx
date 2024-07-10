@@ -49,4 +49,3 @@ function ProductoCard({ producto, onDelete, onEdit }) {
 }
 
 export default ProductoCard;
-

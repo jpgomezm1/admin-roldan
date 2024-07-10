@@ -1,10 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
-import { Button, CircularProgress, IconButton, Typography, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Paper } from '@mui/material';
+import { Button, CircularProgress, IconButton, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Paper, Dialog, DialogTitle, DialogContent, DialogActions } from '@mui/material';
 import AddCircleOutlineIcon from '@mui/icons-material/AddCircleOutline';
 import EditIcon from '@mui/icons-material/Edit';
 import DeleteIcon from '@mui/icons-material/Delete';
-import { useSelector } from 'react-redux'; // Importar useSelector
+import { useSelector } from 'react-redux';
 import { styled } from '@mui/system';
 import ListaPreciosDialog from './ListaPreciosDialog';
 
@@ -14,19 +14,29 @@ const StyledTableCell = styled(TableCell)(({ theme }) => ({
   fontWeight: 'bold'
 }));
 
+const WideDialog = styled(Dialog)(({ theme }) => ({
+  '& .MuiDialog-paper': {
+    minWidth: '800px',
+  },
+}));
+
 const ListaPrecios = () => {
   const [listas, setListas] = useState([]);
   const [open, setOpen] = useState(false);
+  const [productosDialogOpen, setProductosDialogOpen] = useState(false);
+  const [selectedLista, setSelectedLista] = useState(null);
+  const [productos, setProductos] = useState([]);
+  const [loading, setLoading] = useState(false);
   const [nuevaLista, setNuevaLista] = useState({ nombre: '', descuento: '' });
   const [editMode, setEditMode] = useState(false);
   const [listaId, setListaId] = useState(null);
-  const [loading, setLoading] = useState(false);
   const token = useSelector((state) => state.auth.token);
-  const establecimiento = useSelector((state) => state.auth.establecimiento); // Obtener establecimiento directamente
+  const establecimiento = useSelector((state) => state.auth.establecimiento);
   const apiBaseUrl = process.env.REACT_APP_BACKEND_URL;
 
   useEffect(() => {
     fetchListas();
+    fetchProductos();
   }, []);
 
   const fetchListas = async () => {
@@ -42,6 +52,19 @@ const ListaPrecios = () => {
     setLoading(false);
   };
 
+  const fetchProductos = async () => {
+    setLoading(true);
+    try {
+      const response = await axios.get(`${apiBaseUrl}/productos`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      setProductos(response.data);
+    } catch (error) {
+      console.error('Error al obtener los productos', error);
+    }
+    setLoading(false);
+  };
+
   const handleAddLista = async () => {
     if (!establecimiento) {
       console.error('Establecimiento information is not available');
@@ -52,7 +75,7 @@ const ListaPrecios = () => {
     const data = { 
       nombre: nuevaLista.nombre, 
       descuento: nuevaLista.descuento,
-      establecimiento: establecimiento // add establecimiento
+      establecimiento: establecimiento
     };
 
     try {
@@ -109,6 +132,34 @@ const ListaPrecios = () => {
     setNuevaLista(prev => ({ ...prev, [name]: value }));
   };
 
+  const handleOpenProductosDialog = lista => {
+    setSelectedLista(lista);
+    setProductosDialogOpen(true);
+  };
+
+  const handleCloseProductosDialog = () => {
+    setProductosDialogOpen(false);
+    setSelectedLista(null);
+  };
+
+  const calculateDiscountedPrice = (precioBase, descuento) => {
+    return precioBase - (precioBase * (descuento / 100));
+  };
+
+  const calculateIva = (precio) => {
+    const IVA_RATE = 5; // 5%
+    return precio * (IVA_RATE / 100);
+  };
+
+  const formatCurrency = (value) => {
+    return new Intl.NumberFormat('es-CO', {
+      style: 'currency',
+      currency: 'COP',
+      minimumFractionDigits: 0,
+      maximumFractionDigits: 0
+    }).format(value);
+  };
+
   return (
     <div>
       <Button startIcon={<AddCircleOutlineIcon />} onClick={handleClickOpen} variant="contained" size="large" sx={{ mt: 2, backgroundColor: '#5E55FE', color: 'white', borderRadius: '10px', '&:hover': { backgroundColor: '#7b45a1' }, }}>
@@ -126,9 +177,9 @@ const ListaPrecios = () => {
               </TableRow>
             </TableHead>
             <TableBody>
-              {listas.map((lista) => (
+              {listas.map((lista, index) => (
                 <TableRow key={lista.id}>
-                  <TableCell>{lista.id}</TableCell>
+                  <TableCell>{index + 1}</TableCell>
                   <TableCell>{lista.nombre}</TableCell>
                   <TableCell>{lista.descuento}</TableCell>
                   <TableCell>
@@ -137,6 +188,9 @@ const ListaPrecios = () => {
                     </IconButton>
                     <IconButton onClick={() => handleDelete(lista)}>
                       <DeleteIcon />
+                    </IconButton>
+                    <IconButton onClick={() => handleOpenProductosDialog(lista)}>
+                      <AddCircleOutlineIcon />
                     </IconButton>
                   </TableCell>
                 </TableRow>
@@ -153,10 +207,48 @@ const ListaPrecios = () => {
         nuevaLista={nuevaLista}
         editMode={editMode}
       />
+      <WideDialog open={productosDialogOpen} onClose={handleCloseProductosDialog}>
+        <DialogTitle>Productos de la Lista: {selectedLista && selectedLista.nombre}</DialogTitle>
+        <DialogContent>
+          <Table>
+            <TableHead>
+              <TableRow>
+                <StyledTableCell>Producto</StyledTableCell>
+                <StyledTableCell>Precio Base</StyledTableCell>
+                <StyledTableCell>% Descuento</StyledTableCell>
+                <StyledTableCell>Precio con Descuento</StyledTableCell>
+                <StyledTableCell>IVA</StyledTableCell>
+                <StyledTableCell>IPO</StyledTableCell>
+              </TableRow>
+            </TableHead>
+            <TableBody>
+              {selectedLista && productos.map((producto) => {
+                const precioDescuento = calculateDiscountedPrice(producto.precio_base, selectedLista.descuento);
+                const iva = calculateIva(precioDescuento);
+                const ipo = parseFloat(producto.ipo);
+                return (
+                  <TableRow key={producto.id}>
+                    <TableCell>{producto.nombre}</TableCell>
+                    <TableCell>{formatCurrency(producto.precio_base)}</TableCell>
+                    <TableCell>{selectedLista.descuento}%</TableCell>
+                    <TableCell>{formatCurrency(precioDescuento)}</TableCell>
+                    <TableCell>{formatCurrency(iva)}</TableCell>
+                    <TableCell>{formatCurrency(ipo)}</TableCell>
+                  </TableRow>
+                );
+              })}
+            </TableBody>
+          </Table>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={handleCloseProductosDialog} color="primary">
+            Cerrar
+          </Button>
+        </DialogActions>
+      </WideDialog>
     </div>
   );
 };
 
 export default ListaPrecios;
-
 

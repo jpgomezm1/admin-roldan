@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import {
-  Dialog, DialogActions, DialogContent, DialogTitle, TextField, Button,
+  Dialog, DialogActions, DialogContent, DialogTitle, TextField, Grid, Button,
   FormControl, InputLabel, Select, MenuItem, CircularProgress, Card, CardMedia
 } from '@mui/material';
 import AddCircleOutlineIcon from '@mui/icons-material/AddCircleOutline';
@@ -19,6 +19,10 @@ const formatCurrency = (value) => {
     minimumFractionDigits: 0,
     maximumFractionDigits: 0
   }).format(value);
+};
+
+const formatPercentage = (value) => {
+  return `${value.toFixed(2)}%`;
 };
 
 function ProductoDialog({ open, handleClose, handleChange, handleAddProducto, nuevoProducto, loading, editMode }) {
@@ -44,8 +48,27 @@ function ProductoDialog({ open, handleClose, handleChange, handleAddProducto, nu
     if (precioBase) {
       const base = parseFloat(precioBase);
       const ivaAmount = base * (iva / 100);
-      const ipoAmount = base * (ipo / 100);
+      const ipoAmount = parseFloat(ipo);
       return base + ivaAmount + ipoAmount;
+    }
+    return 0;
+  };
+
+  const calculateIvaAmount = () => {
+    const { precioBase, iva } = nuevoProducto;
+    if (precioBase) {
+      const base = parseFloat(precioBase);
+      return base * (iva / 100);
+    }
+    return 0;
+  };
+
+  const calculateIpoPercentage = () => {
+    const { precioBase, ipo } = nuevoProducto;
+    if (precioBase) {
+      const base = parseFloat(precioBase);
+      const ipoValue = parseFloat(ipo);
+      return (ipoValue / base) * 100;
     }
     return 0;
   };
@@ -77,28 +100,64 @@ function ProductoDialog({ open, handleClose, handleChange, handleAddProducto, nu
           value={nuevoProducto.precioBase}
           onChange={handleChange}
         />
-        <TextField
-          margin="dense"
-          id="iva"
-          label="IVA (%)"
-          type="number"
-          fullWidth
-          variant="outlined"
-          name="iva"
-          value={nuevoProducto.iva}
-          onChange={handleChange}
-        />
-        <TextField
-          margin="dense"
-          id="ipo"
-          label="IPO (%)"
-          type="number"
-          fullWidth
-          variant="outlined"
-          name="ipo"
-          value={nuevoProducto.ipo}
-          onChange={handleChange}
-        />
+        <Grid container spacing={2} alignItems="center">
+          <Grid item xs={6}>
+            <TextField
+              margin="dense"
+              id="iva"
+              label="IVA (%)"
+              type="number"
+              fullWidth
+              variant="outlined"
+              name="iva"
+              value={nuevoProducto.iva}
+              onChange={handleChange}
+            />
+          </Grid>
+          <Grid item xs={6}>
+            <ReadOnlyTextField
+              margin="dense"
+              id="ivaAmount"
+              label="IVA (COP)"
+              type="text"
+              fullWidth
+              variant="outlined"
+              value={formatCurrency(calculateIvaAmount())}
+              InputProps={{
+                readOnly: true,
+              }}
+            />
+          </Grid>
+        </Grid>
+        <Grid container spacing={2} alignItems="center">
+          <Grid item xs={6}>
+            <TextField
+              margin="dense"
+              id="ipo"
+              label="IPO (COP)"
+              type="number"
+              fullWidth
+              variant="outlined"
+              name="ipo"
+              value={nuevoProducto.ipo}
+              onChange={handleChange}
+            />
+          </Grid>
+          <Grid item xs={6}>
+            <ReadOnlyTextField
+              margin="dense"
+              id="ipoPercentage"
+              label="IPO (%)"
+              type="text"
+              fullWidth
+              variant="outlined"
+              value={formatPercentage(calculateIpoPercentage())}
+              InputProps={{
+                readOnly: true,
+              }}
+            />
+          </Grid>
+        </Grid>
         <ReadOnlyTextField
           margin="dense"
           id="precioVenta"
@@ -178,3 +237,4 @@ function ProductoDialog({ open, handleClose, handleChange, handleAddProducto, nu
 }
 
 export default ProductoDialog;
+
