@@ -7,6 +7,7 @@ import DeleteIcon from '@mui/icons-material/Delete';
 import { useSelector } from 'react-redux';
 import { styled } from '@mui/system';
 import ListaPreciosDialog from './ListaPreciosDialog';
+import PushPinIcon from '@mui/icons-material/PushPin';
 
 const StyledTableCell = styled(TableCell)(({ theme }) => ({
   backgroundColor: theme.palette.common.black,
@@ -190,7 +191,7 @@ const ListaPrecios = () => {
                       <DeleteIcon />
                     </IconButton>
                     <IconButton onClick={() => handleOpenProductosDialog(lista)}>
-                      <AddCircleOutlineIcon />
+                      <PushPinIcon />
                     </IconButton>
                   </TableCell>
                 </TableRow>
