@@ -1,11 +1,29 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
-import { Button, Grid, Container, CircularProgress, Tabs, Tab, AppBar, Dialog, DialogTitle, DialogContent, DialogActions, TextField, MenuItem, Select, InputLabel, FormControl, Typography } from '@mui/material';
+import { Button, Grid, Container, CircularProgress, Tabs, Tab, AppBar, Dialog, DialogTitle, DialogContent, DialogActions, TextField, MenuItem, Select, InputLabel, FormControl, Typography, Switch, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Paper, IconButton, FormControlLabel, CardMedia } from '@mui/material';
 import AddCircleOutlineIcon from '@mui/icons-material/AddCircleOutline';
+import EditIcon from '@mui/icons-material/Edit';
+import DeleteIcon from '@mui/icons-material/Delete';
+import { styled } from '@mui/system';
 import ProductoCard from '../../components/ProductCard/ProductCard';
 import ProductoDialog from '../../components/ProductDialog/ProductDialog';
 import ListaPrecios from './ListaPrecios';
 import TabPanel from '../GastosScreen/TabPanel';
+
+const formatCurrency = (value) => {
+    return new Intl.NumberFormat('es-CO', {
+      style: 'currency',
+      currency: 'COP',
+      minimumFractionDigits: 0,
+      maximumFractionDigits: 0
+    }).format(value);
+  };
+
+const StyledTableCell = styled(TableCell)(({ theme }) => ({
+  backgroundColor: theme.palette.common.black,
+  color: theme.palette.common.white,
+  fontWeight: 'bold'
+}));
 
 const PaginaProductos = () => {
     const [open, setOpen] = useState(false);
@@ -19,6 +37,7 @@ const PaginaProductos = () => {
     const [tabValue, setTabValue] = useState(0);
     const [categoriaFiltro, setCategoriaFiltro] = useState('');
     const [searchTerm, setSearchTerm] = useState('');
+    const [tableView, setTableView] = useState(false); // Estado para alternar entre vistas
 
     const apiBaseUrl = process.env.REACT_APP_BACKEND_URL;
 
@@ -169,6 +188,44 @@ const PaginaProductos = () => {
         (producto.nombre.toLowerCase().includes(searchTerm.toLowerCase()))
     );
 
+    const renderTable = () => (
+        <TableContainer component={Paper} sx={{ mt: 2}}>
+            <Table>
+                <TableHead>
+                    <TableRow>
+                        <StyledTableCell>Nombre</StyledTableCell>
+                        <StyledTableCell>Precio Base</StyledTableCell>
+                        <StyledTableCell>IVA</StyledTableCell>
+                        <StyledTableCell>IPO</StyledTableCell>
+                        <StyledTableCell>Precio Venta</StyledTableCell>
+                        <StyledTableCell>Categoría</StyledTableCell>
+                        <StyledTableCell>Acciones</StyledTableCell>
+                    </TableRow>
+                </TableHead>
+                <TableBody>
+                    {filteredProductos.map(producto => (
+                        <TableRow key={producto.id}>
+                            <TableCell>{producto.nombre}</TableCell>
+                            <TableCell>{formatCurrency(producto.precio_base)}</TableCell>
+                            <TableCell>5%</TableCell>
+                            <TableCell>{formatCurrency(producto.ipo)}</TableCell>
+                            <TableCell>{formatCurrency(producto.precio)}</TableCell>
+                            <TableCell>{producto.categoria}</TableCell>
+                            <TableCell>
+                                <IconButton onClick={() => handleEdit(producto)}>
+                                    <EditIcon />
+                                </IconButton>
+                                <IconButton onClick={() => handleDelete(producto)}>
+                                    <DeleteIcon />
+                                </IconButton>
+                            </TableCell>
+                        </TableRow>
+                    ))}
+                </TableBody>
+            </Table>
+        </TableContainer>
+    );
+
     return (
         <div style={{ backgroundColor: 'white', minHeight: '100vh' }}>
             <Container maxWidth="xl">
@@ -232,20 +289,38 @@ const PaginaProductos = () => {
                                 </Select>
                             </FormControl>
                         </Grid>
+                        <Grid item xs={12} sm={6} md={4}>
+                            <FormControlLabel
+                                control={<Switch checked={tableView} onChange={() => setTableView(!tableView)} />}
+                                label="Vista de tabla"
+                            />
+                        </Grid>
                     </Grid>
                     {loading ? <CircularProgress /> : (
-                        categorias.map(categoria => (
-                            <div key={categoria}>
-                                <Typography variant="h5" sx={{ mt: 5, mb: 2, color: '#5E55FE', fontWeight: 'bold' }}>
-                                    {categoria}
-                                </Typography>
-                                <Grid container spacing={3}>
-                                    {filteredProductos.filter(producto => producto.categoria === categoria).map((producto, index) => (
+                        tableView ? (
+                            renderTable()
+                        ) : (
+                            categoriaFiltro ? (
+                                <Grid container spacing={3} justifyContent="center" alignItems="center" sx={{ mt: 5 }}>
+                                    {filteredProductos.map((producto, index) => (
                                         <ProductoCard key={index} producto={producto} onDelete={handleDelete} onEdit={handleEdit} />
                                     ))}
                                 </Grid>
-                            </div>
-                        ))
+                            ) : (
+                                categorias.map(categoria => (
+                                    <div key={categoria}>
+                                        <Typography variant="h5" sx={{ mt: 5, mb: 2, color: '#5E55FE', fontWeight: 'bold' }}>
+                                            {categoria}
+                                        </Typography>
+                                        <Grid container spacing={3}>
+                                            {filteredProductos.filter(producto => producto.categoria === categoria).map((producto, index) => (
+                                                <ProductoCard key={index} producto={producto} onDelete={handleDelete} onEdit={handleEdit} />
+                                            ))}
+                                        </Grid>
+                                    </div>
+                                ))
+                            )
+                        )
                     )}
                     <ProductoDialog
                         open={open}
