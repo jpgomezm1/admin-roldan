@@ -161,6 +161,10 @@ const ListaPrecios = () => {
     }).format(value);
   };
 
+  const calculateIpoPercentage = (ipo, precioDescuento) => {
+    return ((ipo / precioDescuento) * 100).toFixed(2);
+  };
+
   return (
     <div>
       <Button startIcon={<AddCircleOutlineIcon />} onClick={handleClickOpen} variant="contained" size="large" sx={{ mt: 2, backgroundColor: '#5E55FE', color: 'white', borderRadius: '10px', '&:hover': { backgroundColor: '#7b45a1' }, }}>
@@ -220,6 +224,7 @@ const ListaPrecios = () => {
                 <StyledTableCell>Precio con Descuento</StyledTableCell>
                 <StyledTableCell>IVA</StyledTableCell>
                 <StyledTableCell>IPO</StyledTableCell>
+                <StyledTableCell>% IPO</StyledTableCell>
               </TableRow>
             </TableHead>
             <TableBody>
@@ -227,6 +232,7 @@ const ListaPrecios = () => {
                 const precioDescuento = calculateDiscountedPrice(producto.precio_base, selectedLista.descuento);
                 const iva = calculateIva(precioDescuento);
                 const ipo = parseFloat(producto.ipo);
+                const ipoPercentage = calculateIpoPercentage(ipo, precioDescuento);
                 return (
                   <TableRow key={producto.id}>
                     <TableCell>{producto.nombre}</TableCell>
@@ -235,6 +241,7 @@ const ListaPrecios = () => {
                     <TableCell>{formatCurrency(precioDescuento)}</TableCell>
                     <TableCell>{formatCurrency(iva)}</TableCell>
                     <TableCell>{formatCurrency(ipo)}</TableCell>
+                    <TableCell>{ipoPercentage}%</TableCell>
                   </TableRow>
                 );
               })}
@@ -252,4 +259,3 @@ const ListaPrecios = () => {
 };
 
 export default ListaPrecios;
-

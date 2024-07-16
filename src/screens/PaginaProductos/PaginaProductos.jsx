@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
-import { Button, Grid, Container, CircularProgress, Tabs, Tab, AppBar, Dialog, DialogTitle, DialogContent, DialogActions } from '@mui/material';
+import { Button, Grid, Container, CircularProgress, Tabs, Tab, AppBar, Dialog, DialogTitle, DialogContent, DialogActions, TextField, MenuItem, Select, InputLabel, FormControl, Typography } from '@mui/material';
 import AddCircleOutlineIcon from '@mui/icons-material/AddCircleOutline';
 import ProductoCard from '../../components/ProductCard/ProductCard';
 import ProductoDialog from '../../components/ProductDialog/ProductDialog';
@@ -17,6 +17,8 @@ const PaginaProductos = () => {
     const [productoId, setProductoId] = useState(null);
     const [loading, setLoading] = useState(false);
     const [tabValue, setTabValue] = useState(0);
+    const [categoriaFiltro, setCategoriaFiltro] = useState('');
+    const [searchTerm, setSearchTerm] = useState('');
 
     const apiBaseUrl = process.env.REACT_APP_BACKEND_URL;
 
@@ -152,6 +154,21 @@ const PaginaProductos = () => {
         setTabValue(newValue);
     };
 
+    const handleCategoriaChange = (event) => {
+        setCategoriaFiltro(event.target.value);
+    };
+
+    const handleSearchChange = (event) => {
+        setSearchTerm(event.target.value);
+    };
+
+    const categorias = [...new Set(productos.map(producto => producto.categoria))];
+
+    const filteredProductos = productos.filter(producto => 
+        (categoriaFiltro === '' || producto.categoria === categoriaFiltro) &&
+        (producto.nombre.toLowerCase().includes(searchTerm.toLowerCase()))
+    );
+
     return (
         <div style={{ backgroundColor: 'white', minHeight: '100vh' }}>
             <Container maxWidth="xl">
@@ -186,12 +203,49 @@ const PaginaProductos = () => {
                     <Button startIcon={<AddCircleOutlineIcon />} onClick={handleClickOpen} variant="contained" size="large" sx={{ mt: 2, backgroundColor: '#5E55FE', color: 'white', borderRadius: '10px', '&:hover': { backgroundColor: '#7b45a1' }, }}>
                         Agregar Producto
                     </Button>
-                    {loading ? <CircularProgress /> : (
-                        <Grid container spacing={3} justifyContent="center" alignItems="center" sx={{ mt: 5 }}>
-                            {productos.map((producto, index) => (
-                                <ProductoCard key={index} producto={producto} onDelete={handleDelete} onEdit={handleEdit} />
-                            ))}
+                    <Grid container spacing={3} alignItems="center" sx={{ mt: 2 }}>
+                        <Grid item xs={12} sm={6} md={4}>
+                            <TextField
+                                label="Buscar Producto"
+                                variant="outlined"
+                                fullWidth
+                                value={searchTerm}
+                                onChange={handleSearchChange}
+                            />
                         </Grid>
+                        <Grid item xs={12} sm={6} md={4}>
+                            <FormControl fullWidth variant="outlined">
+                                <InputLabel>Categoría</InputLabel>
+                                <Select
+                                    value={categoriaFiltro}
+                                    onChange={handleCategoriaChange}
+                                    label="Categoría"
+                                >
+                                    <MenuItem value="">
+                                        <em>Todas</em>
+                                    </MenuItem>
+                                    {categorias.map((categoria, index) => (
+                                        <MenuItem key={index} value={categoria}>
+                                            {categoria}
+                                        </MenuItem>
+                                    ))}
+                                </Select>
+                            </FormControl>
+                        </Grid>
+                    </Grid>
+                    {loading ? <CircularProgress /> : (
+                        categorias.map(categoria => (
+                            <div key={categoria}>
+                                <Typography variant="h5" sx={{ mt: 5, mb: 2, color: '#5E55FE', fontWeight: 'bold' }}>
+                                    {categoria}
+                                </Typography>
+                                <Grid container spacing={3}>
+                                    {filteredProductos.filter(producto => producto.categoria === categoria).map((producto, index) => (
+                                        <ProductoCard key={index} producto={producto} onDelete={handleDelete} onEdit={handleEdit} />
+                                    ))}
+                                </Grid>
+                            </div>
+                        ))
                     )}
                     <ProductoDialog
                         open={open}
@@ -229,5 +283,4 @@ const PaginaProductos = () => {
 };
 
 export default PaginaProductos;
-
 
