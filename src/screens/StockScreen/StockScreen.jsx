@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import {
   Container, Grid, Card, CardContent, Typography, TextField,
-  CircularProgress, IconButton, InputAdornment, Button, MenuItem, Select, FormControl, InputLabel, Dialog, DialogActions, DialogContent, DialogTitle
+  CircularProgress, IconButton, InputAdornment, Button, MenuItem, Select, FormControl, InputLabel, Dialog, DialogActions, DialogContent, DialogTitle, Box
 } from '@mui/material';
 import EditIcon from '@mui/icons-material/Edit';
 import SaveIcon from '@mui/icons-material/Save';
@@ -12,7 +12,11 @@ import AddIcon from '@mui/icons-material/Add';
 import { styled } from '@mui/system';
 import InventoryDialog from './InventoryDialog';
 import MovimientosDialog from './MovimientosDialog';
-import { useSelector } from 'react-redux';  
+import { useSelector } from 'react-redux';
+import SummaryCard from './SummaryCard';
+import InventoryIcon from '@mui/icons-material/Inventory';
+import AttachMoneyIcon from '@mui/icons-material/AttachMoney';
+import ListAltIcon from '@mui/icons-material/ListAlt';
 
 const apiBaseUrl = process.env.REACT_APP_BACKEND_URL;
 
@@ -37,7 +41,7 @@ const StyledCard = styled(Card)({
 const StockScreen = () => {
   const [productos, setProductos] = useState([]);
   const [bodegas, setBodegas] = useState([]);
-  const [bodegaSeleccionada, setBodegaSeleccionada] = useState('');
+  const [bodegaSeleccionada, setBodegaSeleccionada] = useState('general');
   const [loading, setLoading] = useState(true);
   const [stockChanges, setStockChanges] = useState({});
   const [editing, setEditing] = useState({});
@@ -46,7 +50,7 @@ const StockScreen = () => {
   const [movimientosDialogOpen, setMovimientosDialogOpen] = useState(false);
   const [newBodegaDialogOpen, setNewBodegaDialogOpen] = useState(false);
   const [newBodegaName, setNewBodegaName] = useState('');
-  const token = useSelector((state) => state.auth.token);  // Obtener token de autenticación
+  const token = useSelector((state) => state.auth.token);
 
   useEffect(() => {
     fetchBodegas();
@@ -83,7 +87,7 @@ const StockScreen = () => {
 
   const handleBodegaChange = (event) => {
     setBodegaSeleccionada(event.target.value);
-    fetchProductos();  // Re-fetch products to reflect the selected warehouse stocks
+    fetchProductos();
   };
 
   const handleStockChange = (id, cantidad) => {
@@ -185,7 +189,7 @@ const StockScreen = () => {
         }
       });
       alert(response.data.mensaje);
-      fetchProductos();  // Actualiza la lista de productos después del movimiento
+      fetchProductos();
     } catch (error) {
       console.error('Error al registrar los movimientos de inventario', error);
       alert('Error al registrar los movimientos de inventario');
@@ -198,15 +202,62 @@ const StockScreen = () => {
     }, 0);
   };
 
+  const calcularValorInventario = (producto, stock) => {
+    return stock * producto.costo;
+  };
+
+  const calcularTotales = () => {
+    let totalUnidades = 0;
+    let totalMercancia = 0;
+    let totalReferencias = 0;
+
+    productos.forEach(producto => {
+      const stock = bodegaSeleccionada && bodegaSeleccionada !== 'general'
+        ? producto.stocks[bodegaSeleccionada] || 0
+        : calcularStockTotal(producto);
+
+      if (stock > 0) {
+        totalReferencias += 1;
+      }
+
+      totalUnidades += stock;
+      totalMercancia += calcularValorInventario(producto, stock);
+    });
+
+    return { totalUnidades, totalMercancia, totalReferencias };
+  };
+
+  const { totalUnidades, totalMercancia, totalReferencias } = calcularTotales();
+
   const filteredProductos = productos.filter(producto =>
     producto.nombre.toLowerCase().includes(search.toLowerCase())
   );
 
   return (
-    <Container maxWidth="xl" style={{  minHeight: '100vh', paddingTop: '20px' }}>
-      <Typography variant="h4" gutterBottom sx={{ textAlign: 'left', fontWeight: 'bold' }}>
-        Gestión de Inventarios
-      </Typography>
+    <Container maxWidth="xl" style={{ minHeight: '100vh', paddingTop: '20px' }}>
+      <Grid container spacing={3} justifyContent="center" alignItems="center" sx={{ mb: 3 }}>
+        <Grid item xs={12} sm={4} md={4}>
+          <SummaryCard
+            title="Total Unidades en Inventario"
+            value={totalUnidades}
+            icon={<InventoryIcon fontSize="large" />}
+          />
+        </Grid>
+        <Grid item xs={12} sm={4} md={4}>
+          <SummaryCard
+            title="Total Mercancía en Inventario"
+            value={formatCurrency(totalMercancia)}
+            icon={<AttachMoneyIcon fontSize="large" />}
+          />
+        </Grid>
+        <Grid item xs={12} sm={4} md={4}>
+          <SummaryCard
+            title="Total de Referencias"
+            value={totalReferencias}
+            icon={<ListAltIcon fontSize="large" />}
+          />
+        </Grid>
+      </Grid>
       <TextField
         variant="outlined"
         placeholder="Buscar producto"
@@ -229,6 +280,7 @@ const StockScreen = () => {
           onChange={handleBodegaChange}
           label="Bodega"
         >
+          <MenuItem value="general">General</MenuItem>
           {bodegas.map((bodega) => (
             <MenuItem key={bodega.id} value={bodega.id}>
               {bodega.nombre}
@@ -239,59 +291,71 @@ const StockScreen = () => {
           </MenuItem>
         </Select>
       </FormControl>
-      <Button variant="contained" onClick={handleDialogOpen} size="medium" sx={{my: 2, backgroundColor: '#5E55FE', color: 'white', borderRadius: '10px', '&:hover': { backgroundColor: '#7b45a1' }, mr: 1}}>
+      <Button variant="contained" onClick={handleDialogOpen} size="medium" sx={{ my: 2, backgroundColor: '#5E55FE', color: 'white', borderRadius: '10px', '&:hover': { backgroundColor: '#7b45a1' }, mr: 1 }}>
         Registrar Movimiento de Inventario
       </Button>
-      <Button variant="contained" onClick={handleMovimientosDialogOpen} size="medium" sx={{my: 2, backgroundColor: '#5E55FE', color: 'white', borderRadius: '10px', '&:hover': { backgroundColor: '#7b45a1' },}}>
+      <Button variant="contained" onClick={handleMovimientosDialogOpen} size="medium" sx={{ my: 2, backgroundColor: '#5E55FE', color: 'white', borderRadius: '10px', '&:hover': { backgroundColor: '#7b45a1' }, }}>
         Ver Movimientos de Inventario
       </Button>
       {loading ? (
         <CircularProgress />
       ) : (
         <Grid container spacing={3}>
-          {filteredProductos.map(producto => (
-            <Grid item xs={12} sm={6} md={4} key={producto.id}>
-              <StyledCard>
-                <CardContent>
-                  <Typography variant="h5">{producto.nombre}</Typography>
-                  <Typography variant="body1">Precio: {formatCurrency(producto.precio)}</Typography>
-                  <Typography variant="body2">Categoría: {producto.categoria}</Typography>
-                  {bodegaSeleccionada ? (
-                    <>
-                      {editing[producto.id] ? (
-                        <>
-                          <TextField
-                            label="Stock"
-                            type="number"
-                            variant="outlined"
-                            fullWidth
-                            margin="normal"
-                            value={stockChanges[producto.id] !== undefined ? stockChanges[producto.id] : (producto.stocks && producto.stocks[bodegaSeleccionada]) || 0}
-                            onChange={(e) => handleStockChange(producto.id, e.target.value)}
-                          />
-                          <IconButton onClick={() => handleSaveStock(producto.id)} sx={{ color: '#5E55FE'}}>
-                            <SaveIcon />
-                          </IconButton>
-                          <IconButton onClick={() => handleCancelClick(producto.id)} color="secondary">
-                            <CancelIcon />
-                          </IconButton>
-                        </>
-                      ) : (
-                        <>
-                          <Typography variant="body1">Stock: {producto.stocks && producto.stocks[bodegaSeleccionada] !== undefined ? producto.stocks[bodegaSeleccionada] : 0}</Typography>
-                          <IconButton onClick={() => handleEditClick(producto.id)} sx={{ color: '#5E55FE'}}>
-                            <EditIcon />
-                          </IconButton>
-                        </>
-                      )}
-                    </>
-                  ) : (
-                    <Typography variant="body1">Stock total: {calcularStockTotal(producto)}</Typography>
-                  )}
-                </CardContent>
-              </StyledCard>
-            </Grid>
-          ))}
+          {filteredProductos.map(producto => {
+            const stockTotal = calcularStockTotal(producto);
+            const valorInventarioTotal = calcularValorInventario(producto, stockTotal);
+            const stockBodega = bodegaSeleccionada && bodegaSeleccionada !== 'general' ? producto.stocks[bodegaSeleccionada] || 0 : stockTotal;
+            const valorInventarioBodega = calcularValorInventario(producto, stockBodega);
+
+            return (
+              <Grid item xs={12} sm={6} md={4} key={producto.id}>
+                <StyledCard>
+                  <CardContent>
+                    <Typography variant="h5">{producto.nombre}</Typography>
+                    <Typography variant="body1">Precio: {formatCurrency(producto.precio)}</Typography>
+                    <Typography variant="body1">Costo: {formatCurrency(producto.costo)}</Typography>
+                    <Typography variant="body2">Categoría: {producto.categoria}</Typography>
+                    {bodegaSeleccionada && bodegaSeleccionada !== 'general' ? (
+                      <>
+                        {editing[producto.id] ? (
+                          <>
+                            <TextField
+                              label="Stock"
+                              type="number"
+                              variant="outlined"
+                              fullWidth
+                              margin="normal"
+                              value={stockChanges[producto.id] !== undefined ? stockChanges[producto.id] : (producto.stocks && producto.stocks[bodegaSeleccionada]) || 0}
+                              onChange={(e) => handleStockChange(producto.id, e.target.value)}
+                            />
+                            <IconButton onClick={() => handleSaveStock(producto.id)} sx={{ color: '#5E55FE' }}>
+                              <SaveIcon />
+                            </IconButton>
+                            <IconButton onClick={() => handleCancelClick(producto.id)} color="secondary">
+                              <CancelIcon />
+                            </IconButton>
+                          </>
+                        ) : (
+                          <>
+                            <Typography variant="body1">Stock: {producto.stocks && producto.stocks[bodegaSeleccionada] !== undefined ? producto.stocks[bodegaSeleccionada] : 0}</Typography>
+                            <Typography variant="body1">Valor en Inventario: {formatCurrency(valorInventarioBodega)}</Typography>
+                            <IconButton onClick={() => handleEditClick(producto.id)} sx={{ color: '#5E55FE' }}>
+                              <EditIcon />
+                            </IconButton>
+                          </>
+                        )}
+                      </>
+                    ) : (
+                      <>
+                        <Typography variant="body1">Stock total: {stockTotal}</Typography>
+                        <Typography variant="body1">Valor en Inventario: {formatCurrency(valorInventarioTotal)}</Typography>
+                      </>
+                    )}
+                  </CardContent>
+                </StyledCard>
+              </Grid>
+            );
+          })}
         </Grid>
       )}
       <InventoryDialog
@@ -299,7 +363,7 @@ const StockScreen = () => {
         handleClose={handleDialogClose}
         productos={productos}
         handleSaveMovement={handleSaveMovement}
-        bodegas={bodegas}  // Pasar bodegas como prop
+        bodegas={bodegas}
       />
       <MovimientosDialog
         open={movimientosDialogOpen}
@@ -331,5 +395,4 @@ const StockScreen = () => {
 };
 
 export default StockScreen;
-
 

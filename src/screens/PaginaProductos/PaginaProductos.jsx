@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
-import { Button, Grid, Container, CircularProgress, Tabs, Tab, AppBar, Dialog, DialogTitle, DialogContent, DialogActions, TextField, MenuItem, Select, InputLabel, FormControl, Typography, Switch, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Paper, IconButton, FormControlLabel, CardMedia } from '@mui/material';
+import { Button, Grid, Container, CircularProgress, Tabs, Tab, AppBar, Dialog, DialogTitle, DialogContent, DialogActions, TextField, MenuItem, Select, InputLabel, FormControl, Typography, Switch, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Paper, IconButton, FormControlLabel } from '@mui/material';
 import AddCircleOutlineIcon from '@mui/icons-material/AddCircleOutline';
 import EditIcon from '@mui/icons-material/Edit';
 import DeleteIcon from '@mui/icons-material/Delete';
@@ -12,24 +12,24 @@ import TabPanel from '../GastosScreen/TabPanel';
 
 const formatCurrency = (value) => {
     return new Intl.NumberFormat('es-CO', {
-      style: 'currency',
-      currency: 'COP',
-      minimumFractionDigits: 0,
-      maximumFractionDigits: 0
+        style: 'currency',
+        currency: 'COP',
+        minimumFractionDigits: 0,
+        maximumFractionDigits: 0
     }).format(value);
-  };
+};
 
 const StyledTableCell = styled(TableCell)(({ theme }) => ({
-  backgroundColor: theme.palette.common.black,
-  color: theme.palette.common.white,
-  fontWeight: 'bold'
+    backgroundColor: theme.palette.common.black,
+    color: theme.palette.common.white,
+    fontWeight: 'bold'
 }));
 
 const PaginaProductos = () => {
     const [open, setOpen] = useState(false);
     const [confirmOpen, setConfirmOpen] = useState(false);
     const [productos, setProductos] = useState([]);
-    const [nuevoProducto, setNuevoProducto] = useState({ nombre: '', precioBase: '', iva: 5, ipo: '', imagen: null, categoria: '', descripcion: '' });
+    const [nuevoProducto, setNuevoProducto] = useState({ nombre: '', precioBase: '', iva: 5, ipo: '', imagen: null, categoria: '', descripcion: '', costo: '' });
     const [productoAEliminar, setProductoAEliminar] = useState(null);
     const [editMode, setEditMode] = useState(false);
     const [productoId, setProductoId] = useState(null);
@@ -37,7 +37,7 @@ const PaginaProductos = () => {
     const [tabValue, setTabValue] = useState(0);
     const [categoriaFiltro, setCategoriaFiltro] = useState('');
     const [searchTerm, setSearchTerm] = useState('');
-    const [tableView, setTableView] = useState(false); // Estado para alternar entre vistas
+    const [tableView, setTableView] = useState(false);
 
     const apiBaseUrl = process.env.REACT_APP_BACKEND_URL;
 
@@ -69,7 +69,7 @@ const PaginaProductos = () => {
 
     const handleAddProducto = async () => {
         setLoading(true);
-    
+
         const productoData = {
             nombre: nuevoProducto.nombre,
             precio_base: nuevoProducto.precioBase,
@@ -77,8 +77,9 @@ const PaginaProductos = () => {
             categoria: nuevoProducto.categoria,
             descripcion: nuevoProducto.descripcion || '',
             ipo: nuevoProducto.ipo,
+            costo: nuevoProducto.costo // Nuevo campo costo
         };
-    
+
         if (editMode) {
             try {
                 const response = await axios.put(`${apiBaseUrl}/productos/${productoId}`, productoData, {
@@ -99,10 +100,11 @@ const PaginaProductos = () => {
             formData.append('categoria', nuevoProducto.categoria);
             formData.append('descripcion', nuevoProducto.descripcion || '');
             formData.append('ipo', nuevoProducto.ipo);
+            formData.append('costo', nuevoProducto.costo); // Nuevo campo costo
             if (nuevoProducto.imagen) {
                 formData.append('imagen', nuevoProducto.file);
             }
-    
+
             try {
                 const response = await axios.post(`${apiBaseUrl}/productos`, formData, {
                     headers: {
@@ -115,16 +117,17 @@ const PaginaProductos = () => {
                 console.error('Error al agregar el producto', error.response);
             }
         }
-    
+
         setLoading(false);
     };
 
     const handleEdit = producto => {
-        setNuevoProducto({ 
-            ...producto, 
+        setNuevoProducto({
+            ...producto,
             precioBase: producto.precio_base,
-            iva: 5, 
-            ipo: producto.ipo 
+            iva: 5,
+            ipo: producto.ipo,
+            costo: producto.costo // Nuevo campo costo
         });
         setProductoId(producto.id);
         setEditMode(true);
@@ -155,7 +158,7 @@ const PaginaProductos = () => {
     const handleClose = () => {
         setOpen(false);
         setEditMode(false);
-        setNuevoProducto({ nombre: '', precioBase: '', iva: 5, ipo: '', imagen: null, categoria: '', descripcion: '' });
+        setNuevoProducto({ nombre: '', precioBase: '', iva: 5, ipo: '', imagen: null, categoria: '', descripcion: '', costo: '' });
     };
 
     const handleChange = (e) => {
@@ -183,13 +186,13 @@ const PaginaProductos = () => {
 
     const categorias = [...new Set(productos.map(producto => producto.categoria))];
 
-    const filteredProductos = productos.filter(producto => 
+    const filteredProductos = productos.filter(producto =>
         (categoriaFiltro === '' || producto.categoria === categoriaFiltro) &&
         (producto.nombre.toLowerCase().includes(searchTerm.toLowerCase()))
     );
 
     const renderTable = () => (
-        <TableContainer component={Paper} sx={{ mt: 2}}>
+        <TableContainer component={Paper} sx={{ mt: 2 }}>
             <Table>
                 <TableHead>
                     <TableRow>
@@ -340,10 +343,10 @@ const PaginaProductos = () => {
                             ¿Estás seguro de que deseas eliminar el producto {productoAEliminar && productoAEliminar.nombre}?
                         </DialogContent>
                         <DialogActions>
-                            <Button onClick={() => setConfirmOpen(false)} sx={{ color: '#5E55FE'}}>
+                            <Button onClick={() => setConfirmOpen(false)} sx={{ color: '#5E55FE' }}>
                                 Cancelar
                             </Button>
-                            <Button onClick={confirmDelete} sx={{ color: 'red'}}>
+                            <Button onClick={confirmDelete} sx={{ color: 'red' }}>
                                 Eliminar
                             </Button>
                         </DialogActions>
@@ -358,4 +361,3 @@ const PaginaProductos = () => {
 };
 
 export default PaginaProductos;
-

@@ -89,8 +89,6 @@ const Navbar = () => {
               { to: "/clients", icon: <EmojiPeopleIcon />, text: "Comercial" },
               { to: "/cartera", icon: <CurrencyExchangeIcon />, text: "Cartera" },
               { to: "/bodega", icon: <InventoryIcon />, text: "Bodega" },
-              { to: "/costos", icon: <AttachMoneyIcon />, text: "Centro de Costos" },
-              { to: "/suppliers", icon: <StorefrontIcon />, text: "Proveedores" },  
               { to: "/gastos", icon: <PaymentIcon />, text: "Gastos Operacion" },
               { to: "/data", icon: <WaterfallChartIcon />, text: "Data" },        
               { to: "/params", icon: <SettingsIcon />, text: "Parametros" },

@@ -28,10 +28,13 @@ function ProductoCard({ producto, onDelete, onEdit }) {
           <Typography gutterBottom variant="h5" component="div" sx={{ fontWeight: 'medium' }}>
             {producto.nombre}
           </Typography>
-          <Typography variant="body1" color="text.secondary" sx={{ fontSize: '1.2rem' }}>
+          <Typography variant="body1" sx={{ fontSize: '1.2rem' }}>
             Precio Venta: {formatCurrency(producto.precio)}
           </Typography>
-          <Typography variant="body2" color="text.secondary" sx={{ marginBottom: 2 }}>
+          <Typography variant="body1" sx={{ fontSize: '1.1rem' }}>
+            Costo: {formatCurrency(producto.costo)}
+          </Typography>
+          <Typography variant="body2" sx={{ marginBottom: 2 }}>
             Categoría: {producto.categoria}
           </Typography>
           <div>

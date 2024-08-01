@@ -40,7 +40,7 @@ const ClientsScreen = () => {
   const [openPedidosDialog, setOpenPedidosDialog] = useState(false);
   const [editMode, setEditMode] = useState(false);
   const [selectedClient, setSelectedClient] = useState(null);
-  const [newClient, setNewClient] = useState({ nombre: '', telefono: '', correo: '', nit: '', rut: null, diasCartera: '', listaPreciosId: '', direccion: '' });
+  const [newClient, setNewClient] = useState({ nombre: '', razon_social: '', telefono: '', correo: '', nit: '', rut: null, diasCartera: '', listaPreciosId: '', direccion: '' });
   const [fileUploaded, setFileUploaded] = useState(false);
   const [listasPrecios, setListasPrecios] = useState([]);
   const [tabValue, setTabValue] = useState(0);
@@ -105,10 +105,20 @@ const ClientsScreen = () => {
   const handleOpen = (client = null) => {
     if (client) {
       setSelectedClient(client);
-      setNewClient(client);
+      setNewClient({
+        nombre: client.nombre,
+        razon_social: client.razon_social,
+        telefono: client.telefono,
+        correo: client.correo,
+        nit: client.nit,
+        rut: client.rut,
+        diasCartera: client.diasCartera,
+        listaPreciosId: client.listaPreciosId,
+        direccion: client.direccion
+      });
       setEditMode(true);
     } else {
-      setNewClient({ nombre: '', telefono: '', correo: '', nit: '', rut: null, diasCartera: '', listaPreciosId: '', direccion: '' });
+      setNewClient({ nombre: '', razon_social: '', telefono: '', correo: '', nit: '', rut: null, diasCartera: '', listaPreciosId: '', direccion: '' });
       setEditMode(false);
     }
     setOpen(true);
@@ -148,19 +158,25 @@ const ClientsScreen = () => {
 
     const formData = new FormData();
     formData.append('nombre', newClient.nombre);
+    formData.append('razon_social', newClient.razon_social);
     formData.append('telefono', newClient.telefono);
     formData.append('correo', newClient.correo);
     formData.append('nit', newClient.nit);
     formData.append('diasCartera', newClient.diasCartera);
     formData.append('listaPreciosId', newClient.listaPreciosId);
-    formData.append('establecimiento', establecimiento); // add establecimiento
-    formData.append('direccion', newClient.direccion); // add dirección
+    formData.append('establecimiento', establecimiento);
+    formData.append('direccion', newClient.direccion);
     if (newClient.rut) {
       formData.append('rut', newClient.rut);
     }
 
     try {
       if (editMode) {
+        if (!selectedClient) {
+          console.error('No client selected for editing');
+          return;
+        }
+
         const response = await axios.put(`${process.env.REACT_APP_BACKEND_URL}/cliente/${selectedClient.id}`, formData, {
           headers: {
             Authorization: `Bearer ${token}`,
@@ -180,7 +196,7 @@ const ClientsScreen = () => {
         setClients((prevClients) => [...prevClients, { ...newClient, id: response.data.id, rut: response.data.rut }]);
       }
       setOpen(false);
-      setNewClient({ nombre: '', telefono: '', correo: '', nit: '', rut: null, diasCartera: '', listaPreciosId: '', direccion: '' });
+      setNewClient({ nombre: '', razon_social: '', telefono: '', correo: '', nit: '', rut: null, diasCartera: '', listaPreciosId: '', direccion: '' });
       setFileUploaded(false);
     } catch (error) {
       console.error('Error adding/updating client:', error);
@@ -248,11 +264,20 @@ const ClientsScreen = () => {
             <TextField
               autoFocus
               margin="dense"
-              label="Nombre"
+              label="Nombre Comercial"
               type="text"
               fullWidth
               name="nombre"
               value={newClient.nombre}
+              onChange={handleChange}
+            />
+            <TextField
+              margin="dense"
+              label="Razón Social"
+              type="text"
+              fullWidth
+              name="razon_social"
+              value={newClient.razon_social}
               onChange={handleChange}
             />
             <TextField
@@ -348,7 +373,8 @@ const ClientsScreen = () => {
               <TableHead>
                 <TableRow>
                   <StyledTableCell>ID</StyledTableCell>
-                  <StyledTableCell>Nombre</StyledTableCell>
+                  <StyledTableCell>Nombre Comercial</StyledTableCell>
+                  <StyledTableCell>Razón Social</StyledTableCell>
                   <StyledTableCell>Teléfono</StyledTableCell>
                   <StyledTableCell>Correo</StyledTableCell>
                   <StyledTableCell>NIT</StyledTableCell>
@@ -366,6 +392,7 @@ const ClientsScreen = () => {
                   <StyledTableRow key={client.id} onClick={() => handlePedidosDialogOpen(client)}>
                     <TableCell>{client.id}</TableCell>
                     <TableCell>{client.nombre}</TableCell>
+                    <TableCell>{client.razon_social}</TableCell>
                     <TableCell>{client.telefono}</TableCell>
                     <TableCell>{client.correo}</TableCell>
                     <TableCell>{client.nit || 'N/A'}</TableCell>
@@ -374,7 +401,7 @@ const ClientsScreen = () => {
                     <TableCell>{client.direccion || 'N/A'}</TableCell>
                     <TableCell>
                       {client.rut ? (
-                        <IconButton onClick={() => handleDownload(client.rut)}>
+                        <IconButton onClick={(e) => { e.stopPropagation(); handleDownload(client.rut); }}>
                           <PictureAsPdfIcon />
                         </IconButton>
                       ) : (
@@ -384,7 +411,7 @@ const ClientsScreen = () => {
                     <TableCell>{estadisticasClientes[client.id] ? formatCurrency(estadisticasClientes[client.id].ticket_promedio) : 'N/A'}</TableCell>
                     <TableCell>{estadisticasClientes[client.id] ? formatCurrency(estadisticasClientes[client.id].total_gastado) : 'N/A'}</TableCell>
                     <TableCell>
-                      <IconButton onClick={() => handleOpen(client)}>
+                      <IconButton onClick={(e) => { e.stopPropagation(); handleOpen(client); }}>
                         <EditIcon />
                       </IconButton>
                     </TableCell>
@@ -410,3 +437,4 @@ const ClientsScreen = () => {
 };
 
 export default ClientsScreen;
+

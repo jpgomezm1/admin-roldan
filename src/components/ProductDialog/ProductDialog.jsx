@@ -100,6 +100,17 @@ function ProductoDialog({ open, handleClose, handleChange, handleAddProducto, nu
           value={nuevoProducto.precioBase}
           onChange={handleChange}
         />
+        <TextField
+          margin="dense"
+          id="costo"
+          label="Costo del Producto"
+          type="number"
+          fullWidth
+          variant="outlined"
+          name="costo"
+          value={nuevoProducto.costo}
+          onChange={handleChange}
+        />
         <Grid container spacing={2} alignItems="center">
           <Grid item xs={6}>
             <TextField
@@ -204,7 +215,8 @@ function ProductoDialog({ open, handleClose, handleChange, handleAddProducto, nu
           variant="contained"
           component="label"
           startIcon={<AddCircleOutlineIcon />}
-          size="medium" sx={{ mt: 2, backgroundColor: '#5E55FE', color: 'white', borderRadius: '10px', '&:hover': { backgroundColor: '#7b45a1' }, }}
+          size="medium"
+          sx={{ mt: 2, backgroundColor: '#5E55FE', color: 'white', borderRadius: '10px', '&:hover': { backgroundColor: '#7b45a1' }, }}
         >
           {editMode ? "Reemplazar Imagen" : "Subir Imagen"}
           <input
@@ -237,4 +249,3 @@ function ProductoDialog({ open, handleClose, handleChange, handleAddProducto, nu
 }
 
 export default ProductoDialog;
-

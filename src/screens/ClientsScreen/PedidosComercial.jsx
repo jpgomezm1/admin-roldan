@@ -43,6 +43,7 @@ const PedidosComercial = ({ comercial, open, onClose }) => {
   const [openProductosDialog, setOpenProductosDialog] = useState(false);
   const [totalVendido, setTotalVendido] = useState(0);
   const [comision, setComision] = useState(0);
+  const [comisionEfectiva, setComisionEfectiva] = useState(0); // Nuevo estado para Comisión Efectiva
   const [selectedMonth, setSelectedMonth] = useState('all');
   const [availableMonths, setAvailableMonths] = useState([]);
   const token = useSelector((state) => state.auth.token);
@@ -80,6 +81,11 @@ const PedidosComercial = ({ comercial, open, onClose }) => {
     const totalVendido = filteredPedidos.reduce((sum, pedido) => sum + (pedido.total_con_descuento || pedido.total_productos), 0);
     setTotalVendido(totalVendido);
     setComision(totalVendido * 0.10);
+
+    const totalVendidoEfectivo = filteredPedidos
+      .filter(pedido => pedido.estado === 'Factura Pagada')
+      .reduce((sum, pedido) => sum + (pedido.total_con_descuento || pedido.total_productos), 0);
+    setComisionEfectiva(totalVendidoEfectivo * 0.10);
   };
 
   const handleOpenProductosDialog = (productos) => {
@@ -144,11 +150,14 @@ const PedidosComercial = ({ comercial, open, onClose }) => {
               </Select>
             </FormControl>
             <Grid container spacing={2} sx={{ mb: 2 }}>
-              <Grid item xs={12} sm={6}>
+              <Grid item xs={12} sm={4}>
                 <SummaryCard title="Total Vendido" value={totalVendido} />
               </Grid>
-              <Grid item xs={12} sm={6}>
-                <SummaryCard title="Comisión" value={comision} />
+              <Grid item xs={12} sm={4}>
+                <SummaryCard title="Comisión Potencial" value={comision} />
+              </Grid>
+              <Grid item xs={12} sm={4}>
+                <SummaryCard title="Comisión Efectiva" value={comisionEfectiva} /> {/* Nueva tarjeta */}
               </Grid>
             </Grid>
             <TableContainer component={Paper}>
@@ -215,7 +224,7 @@ const PedidosComercial = ({ comercial, open, onClose }) => {
               <Typography key={index}>{producto.nombre}</Typography>
             ))
           ) : (
-            <Typography>No hay productos para mostrar.</Typography>
+            <Typography>No hay productos para mostrar</Typography>
           )}
         </DialogContent>
         <DialogActions>
@@ -229,4 +238,3 @@ const PedidosComercial = ({ comercial, open, onClose }) => {
 };
 
 export default PedidosComercial;
-
