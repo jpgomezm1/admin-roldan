@@ -1,8 +1,20 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import {
-  Dialog, DialogActions, DialogContent, DialogTitle, TextField, Grid, Button,
-  FormControl, InputLabel, Select, MenuItem, CircularProgress, Card, CardMedia
+  Dialog,
+  DialogActions,
+  DialogContent,
+  DialogTitle,
+  TextField,
+  Grid,
+  Button,
+  FormControl,
+  InputLabel,
+  Select,
+  MenuItem,
+  CircularProgress,
+  Card,
+  CardMedia,
 } from '@mui/material';
 import AddCircleOutlineIcon from '@mui/icons-material/AddCircleOutline';
 import { styled } from '@mui/system';
@@ -17,7 +29,7 @@ const formatCurrency = (value) => {
     style: 'currency',
     currency: 'COP',
     minimumFractionDigits: 0,
-    maximumFractionDigits: 0
+    maximumFractionDigits: 0,
   }).format(value);
 };
 
@@ -25,7 +37,16 @@ const formatPercentage = (value) => {
   return `${value.toFixed(2)}%`;
 };
 
-function ProductoDialog({ open, handleClose, handleChange, handleAddProducto, nuevoProducto, loading, editMode }) {
+function ProductoDialog({
+  open,
+  handleClose,
+  handleChange,
+  handleAddProducto,
+  nuevoProducto,
+  loading,
+  editMode,
+  subcategorias, // Receive subcategories
+}) {
   const [categorias, setCategorias] = useState([]);
 
   const apiBaseUrl = process.env.REACT_APP_BACKEND_URL;
@@ -211,14 +232,37 @@ function ProductoDialog({ open, handleClose, handleChange, handleAddProducto, nu
             ))}
           </Select>
         </FormControl>
+        <FormControl fullWidth margin="dense">
+          <InputLabel id="subcategoria-label">Subcategoría</InputLabel>
+          <Select
+            labelId="subcategoria-label"
+            id="subcategoria"
+            value={nuevoProducto.subcategoria}
+            label="Subcategoría"
+            name="subcategoria"
+            onChange={handleChange}
+          >
+            {subcategorias.map((subcategoria) => (
+              <MenuItem key={subcategoria.id} value={subcategoria.nombre}>
+                {subcategoria.nombre}
+              </MenuItem>
+            ))}
+          </Select>
+        </FormControl>
         <Button
           variant="contained"
           component="label"
           startIcon={<AddCircleOutlineIcon />}
           size="medium"
-          sx={{ mt: 2, backgroundColor: '#5E55FE', color: 'white', borderRadius: '10px', '&:hover': { backgroundColor: '#7b45a1' }, }}
+          sx={{
+            mt: 2,
+            backgroundColor: '#5E55FE',
+            color: 'white',
+            borderRadius: '10px',
+            '&:hover': { backgroundColor: '#7b45a1' },
+          }}
         >
-          {editMode ? "Reemplazar Imagen" : "Subir Imagen"}
+          {editMode ? 'Reemplazar Imagen' : 'Subir Imagen'}
           <input
             type="file"
             hidden
@@ -239,9 +283,17 @@ function ProductoDialog({ open, handleClose, handleChange, handleAddProducto, nu
         )}
       </DialogContent>
       <DialogActions>
-        <Button onClick={handleClose} sx={{ color: '#5E55FE' }}>Cancelar</Button>
+        <Button onClick={handleClose} sx={{ color: '#5E55FE' }}>
+          Cancelar
+        </Button>
         <Button onClick={handleAddProducto} disabled={loading} sx={{ color: '#5E55FE' }}>
-          {loading ? <CircularProgress size={24} /> : editMode ? 'Guardar Cambios' : 'Agregar'}
+          {loading ? (
+            <CircularProgress size={24} />
+          ) : editMode ? (
+            'Guardar Cambios'
+          ) : (
+            'Agregar'
+          )}
         </Button>
       </DialogActions>
     </Dialog>

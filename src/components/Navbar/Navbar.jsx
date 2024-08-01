@@ -92,7 +92,6 @@ const Navbar = () => {
               { to: "/gastos", icon: <PaymentIcon />, text: "Gastos Operacion" },
               { to: "/data", icon: <WaterfallChartIcon />, text: "Data" },        
               { to: "/params", icon: <SettingsIcon />, text: "Parametros" },
-              { to: "/soporte", icon: <SupportAgentIcon />, text: "Soporte" },
             ].map(item => (
               <ListItem 
                 button 

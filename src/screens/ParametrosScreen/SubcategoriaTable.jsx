@@ -27,98 +27,98 @@ const StyledButton = styled(Button)(({ theme }) => ({
   }
 }));
 
-const CategoriaTable = () => {
-  const [categorias, setCategorias] = useState({});
-  const [newCategoria, setNewCategoria] = useState('');
-  const [editCategoria, setEditCategoria] = useState(null);
+const SubcategoriaTable = () => {
+  const [subcategorias, setSubcategorias] = useState({});
+  const [newSubcategoria, setNewSubcategoria] = useState('');
+  const [editSubcategoria, setEditSubcategoria] = useState(null);
   const [editNombre, setEditNombre] = useState('');
-  const [categoriasIds, setCategoriasIds] = useState({});
+  const [subcategoriasIds, setSubcategoriasIds] = useState({});
 
   const apiBaseUrl = process.env.REACT_APP_BACKEND_URL;
 
   useEffect(() => {
-    const fetchCategorias = async () => {
+    const fetchSubcategorias = async () => {
       try {
-        const token = localStorage.getItem('token'); // Asegúrate de que el token JWT esté almacenado en localStorage
-        const response = await axios.get(`${apiBaseUrl}/categorias`, {
+        const token = localStorage.getItem('token');
+        const response = await axios.get(`${apiBaseUrl}/subcategorias`, {
           headers: {
             Authorization: `Bearer ${token}`
           }
         });
-        const fetchedCategorias = response.data.reduce((acc, categoria) => {
-          acc[categoria.nombre] = categoria.id;
-          setCategoriasIds((prevIds) => ({ ...prevIds, [categoria.nombre]: categoria.id }));
+        const fetchedSubcategorias = response.data.reduce((acc, subcategoria) => {
+          acc[subcategoria.nombre] = subcategoria.id;
+          setSubcategoriasIds((prevIds) => ({ ...prevIds, [subcategoria.nombre]: subcategoria.id }));
           return acc;
         }, {});
-        setCategorias(fetchedCategorias);
+        setSubcategorias(fetchedSubcategorias);
       } catch (error) {
-        console.error('Error fetching categorias:', error);
+        console.error('Error fetching subcategorias:', error);
       }
     };
 
-    fetchCategorias();
+    fetchSubcategorias();
   }, [apiBaseUrl]);
 
-  const handleAddCategoria = async () => {
-    if (newCategoria) {
+  const handleAddSubcategoria = async () => {
+    if (newSubcategoria) {
       try {
         const token = localStorage.getItem('token');
-        const response = await axios.post(`${apiBaseUrl}/categorias`, { nombre: newCategoria }, {
+        const response = await axios.post(`${apiBaseUrl}/subcategorias`, { nombre: newSubcategoria }, {
           headers: {
             Authorization: `Bearer ${token}`
           }
         });
-        const addedCategoria = response.data;
-        setCategorias({ ...categorias, [addedCategoria.nombre]: addedCategoria.id });
-        setCategoriasIds((prevIds) => ({ ...prevIds, [addedCategoria.nombre]: addedCategoria.id }));
-        setNewCategoria('');
+        const addedSubcategoria = response.data;
+        setSubcategorias({ ...subcategorias, [addedSubcategoria.nombre]: addedSubcategoria.id });
+        setSubcategoriasIds((prevIds) => ({ ...prevIds, [addedSubcategoria.nombre]: addedSubcategoria.id }));
+        setNewSubcategoria('');
       } catch (error) {
-        console.error('Error adding categoria:', error);
+        console.error('Error adding subcategoria:', error);
       }
     }
   };
 
   const handleEdit = (nombre) => {
-    setEditCategoria(nombre);
+    setEditSubcategoria(nombre);
     setEditNombre(nombre);
   };
 
   const handleSave = async (oldNombre) => {
     try {
       const token = localStorage.getItem('token');
-      const categoriaId = categoriasIds[oldNombre];
-      const response = await axios.put(`${apiBaseUrl}/categorias/${categoriaId}`, { nombre: editNombre }, {
+      const subcategoriaId = subcategoriasIds[oldNombre];
+      const response = await axios.put(`${apiBaseUrl}/subcategorias/${subcategoriaId}`, { nombre: editNombre }, {
         headers: {
           Authorization: `Bearer ${token}`
         }
       });
-      const updatedCategoria = response.data;
-      const updatedCategorias = { ...categorias };
-      delete updatedCategorias[oldNombre];
-      setCategorias({ ...updatedCategorias, [updatedCategoria.nombre]: updatedCategoria.id });
-      setCategoriasIds((prevIds) => ({ ...prevIds, [updatedCategoria.nombre]: updatedCategoria.id }));
-      setEditCategoria(null);
+      const updatedSubcategoria = response.data;
+      const updatedSubcategorias = { ...subcategorias };
+      delete updatedSubcategorias[oldNombre];
+      setSubcategorias({ ...updatedSubcategorias, [updatedSubcategoria.nombre]: updatedSubcategoria.id });
+      setSubcategoriasIds((prevIds) => ({ ...prevIds, [updatedSubcategoria.nombre]: updatedSubcategoria.id }));
+      setEditSubcategoria(null);
       setEditNombre('');
     } catch (error) {
-      console.error('Error updating categoria:', error);
+      console.error('Error updating subcategoria:', error);
     }
   };
 
-  const handleDeleteCategoria = async (nombre) => {
+  const handleDeleteSubcategoria = async (nombre) => {
     try {
       const token = localStorage.getItem('token');
-      const categoriaId = categoriasIds[nombre];
-      await axios.delete(`${apiBaseUrl}/categorias/${categoriaId}`, {
+      const subcategoriaId = subcategoriasIds[nombre];
+      await axios.delete(`${apiBaseUrl}/subcategorias/${subcategoriaId}`, {
         headers: {
           Authorization: `Bearer ${token}`
         }
       });
-      const { [nombre]: _, ...newCategorias } = categorias;
-      setCategorias(newCategorias);
-      const { [nombre]: __, ...newIds } = categoriasIds;
-      setCategoriasIds(newIds);
+      const { [nombre]: _, ...newSubcategorias } = subcategorias;
+      setSubcategorias(newSubcategorias);
+      const { [nombre]: __, ...newIds } = subcategoriasIds;
+      setSubcategoriasIds(newIds);
     } catch (error) {
-      console.error('Error deleting categoria:', error);
+      console.error('Error deleting subcategoria:', error);
     }
   };
 
@@ -128,14 +128,14 @@ const CategoriaTable = () => {
         <Table>
           <TableHead>
             <TableRow>
-              <StyledTableCell>Categoría</StyledTableCell>
+              <StyledTableCell>Subcategoría</StyledTableCell>
               <StyledTableCell align="right">Acciones</StyledTableCell>
             </TableRow>
           </TableHead>
           <TableBody>
-            {Object.keys(categorias).map((nombre) => (
+            {Object.keys(subcategorias).map((nombre) => (
               <TableRow key={nombre}>
-                {editCategoria === nombre ? (
+                {editSubcategoria === nombre ? (
                   <>
                     <TableCell>
                       <TextField
@@ -158,7 +158,7 @@ const CategoriaTable = () => {
                       <StyledIconButton onClick={() => handleEdit(nombre)}>
                         <EditIcon />
                       </StyledIconButton>
-                      <StyledIconButton onClick={() => handleDeleteCategoria(nombre)}>
+                      <StyledIconButton onClick={() => handleDeleteSubcategoria(nombre)}>
                         <DeleteIcon />
                       </StyledIconButton>
                     </TableCell>
@@ -169,14 +169,14 @@ const CategoriaTable = () => {
             <TableRow>
               <TableCell>
                 <TextField
-                  label="Nueva Categoría"
-                  value={newCategoria}
-                  onChange={(e) => setNewCategoria(e.target.value)}
+                  label="Nueva Subcategoría"
+                  value={newSubcategoria}
+                  onChange={(e) => setNewSubcategoria(e.target.value)}
                 />
               </TableCell>
               <TableCell align="right">
-                <StyledButton variant="contained" onClick={handleAddCategoria}>
-                  Agregar Categoría
+                <StyledButton variant="contained" onClick={handleAddSubcategoria}>
+                  Agregar Subcategoría
                 </StyledButton>
               </TableCell>
             </TableRow>
@@ -187,6 +187,4 @@ const CategoriaTable = () => {
   );
 };
 
-export default CategoriaTable;
-
-
+export default SubcategoriaTable;

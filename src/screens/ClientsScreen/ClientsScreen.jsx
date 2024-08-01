@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
-import { Box, Button, Dialog, DialogActions, DialogContent, DialogTitle, TextField, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Paper, IconButton, Typography, Select, MenuItem, FormControl, InputLabel, Tabs, Tab, AppBar, CircularProgress } from '@mui/material';
+import { Box, Button, Dialog, DialogActions, DialogContent, DialogTitle, TextField, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Paper, IconButton, Typography, Select, MenuItem, FormControl, InputLabel, Tabs, Tab, AppBar, CircularProgress, Switch} from '@mui/material';
 import AddIcon from '@mui/icons-material/Add';
 import { useSelector } from 'react-redux';
 import { styled } from '@mui/system';
@@ -40,11 +40,25 @@ const ClientsScreen = () => {
   const [openPedidosDialog, setOpenPedidosDialog] = useState(false);
   const [editMode, setEditMode] = useState(false);
   const [selectedClient, setSelectedClient] = useState(null);
-  const [newClient, setNewClient] = useState({ nombre: '', razon_social: '', telefono: '', correo: '', nit: '', rut: null, diasCartera: '', listaPreciosId: '', direccion: '' });
+  const [newClient, setNewClient] = useState({
+    nombre: '',
+    razon_social: '',
+    telefono: '',
+    correo: '',
+    nit: '',
+    rut: null,
+    diasCartera: '',
+    listaPreciosId: '',
+    direccion: '',
+    ciudad: ''
+  });
   const [fileUploaded, setFileUploaded] = useState(false);
   const [listasPrecios, setListasPrecios] = useState([]);
   const [tabValue, setTabValue] = useState(0);
   const [loading, setLoading] = useState(false);
+  const [sortColumn, setSortColumn] = useState('ticket_promedio');
+  const [sortOrder, setSortOrder] = useState('asc');
+
   const token = useSelector((state) => state.auth.token);
   const establecimiento = useSelector((state) => state.auth.establecimiento);
 
@@ -114,11 +128,23 @@ const ClientsScreen = () => {
         rut: client.rut,
         diasCartera: client.diasCartera,
         listaPreciosId: client.listaPreciosId,
-        direccion: client.direccion
+        direccion: client.direccion,
+        ciudad: client.ciudad
       });
       setEditMode(true);
     } else {
-      setNewClient({ nombre: '', razon_social: '', telefono: '', correo: '', nit: '', rut: null, diasCartera: '', listaPreciosId: '', direccion: '' });
+      setNewClient({
+        nombre: '',
+        razon_social: '',
+        telefono: '',
+        correo: '',
+        nit: '',
+        rut: null,
+        diasCartera: '',
+        listaPreciosId: '',
+        direccion: '',
+        ciudad: ''
+      });
       setEditMode(false);
     }
     setOpen(true);
@@ -166,6 +192,7 @@ const ClientsScreen = () => {
     formData.append('listaPreciosId', newClient.listaPreciosId);
     formData.append('establecimiento', establecimiento);
     formData.append('direccion', newClient.direccion);
+    formData.append('ciudad', newClient.ciudad);
     if (newClient.rut) {
       formData.append('rut', newClient.rut);
     }
@@ -177,26 +204,52 @@ const ClientsScreen = () => {
           return;
         }
 
-        const response = await axios.put(`${process.env.REACT_APP_BACKEND_URL}/cliente/${selectedClient.id}`, formData, {
-          headers: {
-            Authorization: `Bearer ${token}`,
-            'Content-Type': 'multipart/form-data'
+        const response = await axios.put(
+          `${process.env.REACT_APP_BACKEND_URL}/cliente/${selectedClient.id}`,
+          formData,
+          {
+            headers: {
+              Authorization: `Bearer ${token}`,
+              'Content-Type': 'multipart/form-data'
+            }
           }
-        });
+        );
         setClients((prevClients) =>
-          prevClients.map((client) => (client.id === selectedClient.id ? { ...newClient, id: selectedClient.id, rut: response.data.rut } : client))
+          prevClients.map((client) =>
+            client.id === selectedClient.id
+              ? { ...newClient, id: selectedClient.id, rut: response.data.rut }
+              : client
+          )
         );
       } else {
-        const response = await axios.post(`${process.env.REACT_APP_BACKEND_URL}/cliente`, formData, {
-          headers: {
-            Authorization: `Bearer ${token}`,
-            'Content-Type': 'multipart/form-data'
+        const response = await axios.post(
+          `${process.env.REACT_APP_BACKEND_URL}/cliente`,
+          formData,
+          {
+            headers: {
+              Authorization: `Bearer ${token}`,
+              'Content-Type': 'multipart/form-data'
+            }
           }
-        });
-        setClients((prevClients) => [...prevClients, { ...newClient, id: response.data.id, rut: response.data.rut }]);
+        );
+        setClients((prevClients) => [
+          ...prevClients,
+          { ...newClient, id: response.data.id, rut: response.data.rut }
+        ]);
       }
       setOpen(false);
-      setNewClient({ nombre: '', razon_social: '', telefono: '', correo: '', nit: '', rut: null, diasCartera: '', listaPreciosId: '', direccion: '' });
+      setNewClient({
+        nombre: '',
+        razon_social: '',
+        telefono: '',
+        correo: '',
+        nit: '',
+        rut: null,
+        diasCartera: '',
+        listaPreciosId: '',
+        direccion: '',
+        ciudad: ''
+      });
       setFileUploaded(false);
     } catch (error) {
       console.error('Error adding/updating client:', error);
@@ -211,9 +264,39 @@ const ClientsScreen = () => {
     setTabValue(newValue);
   };
 
+  const handleSortColumnChange = (event) => {
+    setSortColumn(event.target.value);
+  };
+
+  const handleSortOrderChange = () => {
+    setSortOrder((prevOrder) => (prevOrder === 'asc' ? 'desc' : 'asc'));
+  };
+
+  const sortedClients = clients.slice().sort((a, b) => {
+    const aStat = estadisticasClientes[a.id]
+      ? estadisticasClientes[a.id][sortColumn]
+      : 0;
+    const bStat = estadisticasClientes[b.id]
+      ? estadisticasClientes[b.id][sortColumn]
+      : 0;
+
+    if (sortOrder === 'asc') {
+      return aStat - bStat;
+    } else {
+      return bStat - aStat;
+    }
+  });
+
   return (
     <Box sx={{ p: 4 }}>
-      <AppBar position="static" sx={{ backgroundColor: 'transparent', boxShadow: 'none', borderBottom: '2px solid #5E55FE' }}>
+      <AppBar
+        position="static"
+        sx={{
+          backgroundColor: 'transparent',
+          boxShadow: 'none',
+          borderBottom: '2px solid #5E55FE'
+        }}
+      >
         <Tabs
           value={tabValue}
           onChange={handleTabChange}
@@ -241,9 +324,40 @@ const ClientsScreen = () => {
         </Tabs>
       </AppBar>
       <TabPanel value={tabValue} index={0}>
-        <Button variant="contained" startIcon={<AddIcon />} onClick={() => handleOpen()} sx={{ mt: 2, backgroundColor: '#5E55FE', color: 'white', borderRadius: '10px', '&:hover': { backgroundColor: '#7b45a1' }, }}>
+        <Button
+          variant="contained"
+          startIcon={<AddIcon />}
+          onClick={() => handleOpen()}
+          sx={{
+            mt: 2,
+            backgroundColor: '#5E55FE',
+            color: 'white',
+            borderRadius: '10px',
+            '&:hover': { backgroundColor: '#7b45a1' }
+          }}
+        >
           Agregar Cliente
         </Button>
+
+        {/* Controles de ordenación */}
+        <Box sx={{ display: 'flex', alignItems: 'center', mt: 2 }}>
+          <FormControl sx={{ mr: 2 }}>
+            <InputLabel id="sort-column-label">Ordenar por</InputLabel>
+            <Select
+              labelId="sort-column-label"
+              value={sortColumn}
+              onChange={handleSortColumnChange}
+              label="Ordenar por"
+            >
+              <MenuItem value="ticket_promedio">Ticket Promedio</MenuItem>
+              <MenuItem value="total_gastado">Total Gastado</MenuItem>
+            </Select>
+          </FormControl>
+          <Typography>Ascendente</Typography>
+          <Switch checked={sortOrder === 'desc'} onChange={handleSortOrderChange} />
+          <Typography>Descendente</Typography>
+        </Box>
+
         <Dialog open={open} onClose={handleClose}>
           <DialogTitle>
             {editMode ? 'Editar Cliente' : 'Agregar Cliente'}
@@ -325,6 +439,15 @@ const ClientsScreen = () => {
               value={newClient.direccion}
               onChange={handleChange}
             />
+            <TextField
+              margin="dense"
+              label="Ciudad"
+              type="text"
+              fullWidth
+              name="ciudad"
+              value={newClient.ciudad}
+              onChange={handleChange}
+            />
             <FormControl fullWidth sx={{ mt: 2 }}>
               <InputLabel id="lista-precios-label">Lista de Precios</InputLabel>
               <Select
@@ -352,11 +475,25 @@ const ClientsScreen = () => {
               onChange={handleFileChange}
             />
             <label htmlFor="rut-upload">
-              <Button variant="contained" component="span" sx={{ mt: 2, backgroundColor: '#5E55FE', color: 'white', borderRadius: '10px', '&:hover': { backgroundColor: '#7b45a1' }, }}>
+              <Button
+                variant="contained"
+                component="span"
+                sx={{
+                  mt: 2,
+                  backgroundColor: '#5E55FE',
+                  color: 'white',
+                  borderRadius: '10px',
+                  '&:hover': { backgroundColor: '#7b45a1' }
+                }}
+              >
                 Subir RUT
               </Button>
             </label>
-            {fileUploaded && <Typography variant="body2" color="success.main">Archivo cargado exitosamente</Typography>}
+            {fileUploaded && (
+              <Typography variant="body2" color="success.main">
+                Archivo cargado exitosamente
+              </Typography>
+            )}
           </DialogContent>
           <DialogActions>
             <Button onClick={handleClose} color="primary">
@@ -367,7 +504,9 @@ const ClientsScreen = () => {
             </Button>
           </DialogActions>
         </Dialog>
-        {loading ? <CircularProgress /> : (
+        {loading ? (
+          <CircularProgress />
+        ) : (
           <TableContainer component={Paper} sx={{ mt: 2 }}>
             <Table>
               <TableHead>
@@ -381,6 +520,7 @@ const ClientsScreen = () => {
                   <StyledTableCell>Días de Cartera</StyledTableCell>
                   <StyledTableCell>Lista de Precios</StyledTableCell>
                   <StyledTableCell>Dirección</StyledTableCell>
+                  <StyledTableCell>Ciudad</StyledTableCell>
                   <StyledTableCell>Archivos</StyledTableCell>
                   <StyledTableCell>Ticket Promedio</StyledTableCell>
                   <StyledTableCell>Total Gastado</StyledTableCell>
@@ -388,8 +528,11 @@ const ClientsScreen = () => {
                 </TableRow>
               </TableHead>
               <TableBody>
-                {clients.map((client) => (
-                  <StyledTableRow key={client.id} onClick={() => handlePedidosDialogOpen(client)}>
+                {sortedClients.map((client) => (
+                  <StyledTableRow
+                    key={client.id}
+                    onClick={() => handlePedidosDialogOpen(client)}
+                  >
                     <TableCell>{client.id}</TableCell>
                     <TableCell>{client.nombre}</TableCell>
                     <TableCell>{client.razon_social}</TableCell>
@@ -397,21 +540,50 @@ const ClientsScreen = () => {
                     <TableCell>{client.correo}</TableCell>
                     <TableCell>{client.nit || 'N/A'}</TableCell>
                     <TableCell>{client.diasCartera || 'N/A'}</TableCell>
-                    <TableCell>{client.listaPreciosId ? listasPrecios.find((lista) => lista.id === client.listaPreciosId)?.nombre : 'Ninguna'}</TableCell>
+                    <TableCell>
+                      {client.listaPreciosId
+                        ? listasPrecios.find(
+                            (lista) => lista.id === client.listaPreciosId
+                          )?.nombre
+                        : 'Ninguna'}
+                    </TableCell>
                     <TableCell>{client.direccion || 'N/A'}</TableCell>
+                    <TableCell>{client.ciudad || 'N/A'}</TableCell>
                     <TableCell>
                       {client.rut ? (
-                        <IconButton onClick={(e) => { e.stopPropagation(); handleDownload(client.rut); }}>
+                        <IconButton
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleDownload(client.rut);
+                          }}
+                        >
                           <PictureAsPdfIcon />
                         </IconButton>
                       ) : (
                         'N/A'
                       )}
                     </TableCell>
-                    <TableCell>{estadisticasClientes[client.id] ? formatCurrency(estadisticasClientes[client.id].ticket_promedio) : 'N/A'}</TableCell>
-                    <TableCell>{estadisticasClientes[client.id] ? formatCurrency(estadisticasClientes[client.id].total_gastado) : 'N/A'}</TableCell>
                     <TableCell>
-                      <IconButton onClick={(e) => { e.stopPropagation(); handleOpen(client); }}>
+                      {estadisticasClientes[client.id]
+                        ? formatCurrency(
+                            estadisticasClientes[client.id].ticket_promedio
+                          )
+                        : 'N/A'}
+                    </TableCell>
+                    <TableCell>
+                      {estadisticasClientes[client.id]
+                        ? formatCurrency(
+                            estadisticasClientes[client.id].total_gastado
+                          )
+                        : 'N/A'}
+                    </TableCell>
+                    <TableCell>
+                      <IconButton
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleOpen(client);
+                        }}
+                      >
                         <EditIcon />
                       </IconButton>
                     </TableCell>
@@ -437,4 +609,3 @@ const ClientsScreen = () => {
 };
 
 export default ClientsScreen;
-

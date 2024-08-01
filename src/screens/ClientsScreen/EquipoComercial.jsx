@@ -1,3 +1,4 @@
+// EquipoComercial.jsx
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import { Box, Button, Dialog, DialogActions, DialogContent, DialogTitle, TextField, Grid, Card, CardContent, Typography, IconButton, CircularProgress, Avatar, CardHeader } from '@mui/material';
@@ -22,7 +23,7 @@ const EquipoComercial = () => {
   const [open, setOpen] = useState(false);
   const [editMode, setEditMode] = useState(false);
   const [selectedComercial, setSelectedComercial] = useState(null);
-  const [newComercial, setNewComercial] = useState({ nombre: '', idComercial: '', ciudad: '' });
+  const [newComercial, setNewComercial] = useState({ nombre: '', idComercial: '', ciudad: '', email: '', telefono: '' }); // Agregar email y telefono
   const [loading, setLoading] = useState(false);
   const [pedidosOpen, setPedidosOpen] = useState(false);
   const token = useSelector((state) => state.auth.token);
@@ -53,7 +54,7 @@ const EquipoComercial = () => {
       setNewComercial(comercial);
       setEditMode(true);
     } else {
-      setNewComercial({ nombre: '', idComercial: '', ciudad: '' });
+      setNewComercial({ nombre: '', idComercial: '', ciudad: '', email: '', telefono: '' }); // Reiniciar email y telefono
       setEditMode(false);
     }
     setOpen(true);
@@ -178,6 +179,24 @@ const EquipoComercial = () => {
             value={newComercial.ciudad}
             onChange={handleChange}
           />
+          <TextField
+            margin="dense"
+            label="Correo Electrónico"
+            type="email"
+            fullWidth
+            name="email"
+            value={newComercial.email}
+            onChange={handleChange}
+          />
+          <TextField
+            margin="dense"
+            label="Número de Teléfono"
+            type="tel"
+            fullWidth
+            name="telefono"
+            value={newComercial.telefono}
+            onChange={handleChange}
+          />
         </DialogContent>
         <DialogActions>
           <Button onClick={handleClose} color="primary">
@@ -212,6 +231,8 @@ const EquipoComercial = () => {
                 />
                 <CardContent>
                   <Typography variant="body2" color="textSecondary">Ciudad: {comercial.ciudad}</Typography>
+                  <Typography variant="body2" color="textSecondary">Correo: {comercial.email}</Typography>
+                  <Typography variant="body2" color="textSecondary">Teléfono: {comercial.telefono}</Typography>
                 </CardContent>
               </CardStyled>
             </Grid>
@@ -226,5 +247,3 @@ const EquipoComercial = () => {
 };
 
 export default EquipoComercial;
-
-

@@ -45,3 +45,5 @@ const SummaryCards = ({ totalVentas, totalProductos, totalDomicilios, numeroPedi
 };
 
 export default SummaryCards;
+
+

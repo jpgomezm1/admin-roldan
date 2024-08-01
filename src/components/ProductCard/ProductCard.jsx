@@ -34,8 +34,11 @@ function ProductoCard({ producto, onDelete, onEdit }) {
           <Typography variant="body1" sx={{ fontSize: '1.1rem' }}>
             Costo: {formatCurrency(producto.costo)}
           </Typography>
-          <Typography variant="body2" sx={{ marginBottom: 2 }}>
+          <Typography variant="body2">
             Categoría: {producto.categoria}
+          </Typography>
+          <Typography variant="body2" sx={{ marginBottom: 2 }}>
+            Subcategoría: {producto.subcategoria || 'Sin subcategoría'}
           </Typography>
           <div>
             <IconButton onClick={() => onEdit(producto)} size="small" sx={{ color: '#5E55FE', marginRight: 1 }}>

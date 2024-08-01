@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import {
   Container, Grid, Card, CardContent, Typography, TextField,
-  CircularProgress, IconButton, InputAdornment, Button, MenuItem, Select, FormControl, InputLabel, Dialog, DialogActions, DialogContent, DialogTitle, Box
+  CircularProgress, IconButton, InputAdornment, Button, MenuItem, Select, FormControl, InputLabel, Dialog, DialogActions, DialogContent, DialogTitle, Box, Chip
 } from '@mui/material';
 import EditIcon from '@mui/icons-material/Edit';
 import SaveIcon from '@mui/icons-material/Save';
@@ -233,6 +233,16 @@ const StockScreen = () => {
     producto.nombre.toLowerCase().includes(search.toLowerCase())
   );
 
+  const getStockStatus = (stock) => {
+    if (stock > 50) {
+      return { label: 'Bien abastecido', color: 'success' };
+    } else if (stock > 0) {
+      return { label: 'Poco stock', color: 'warning' };
+    } else {
+      return { label: 'Agotado', color: 'error' };
+    }
+  };
+
   return (
     <Container maxWidth="xl" style={{ minHeight: '100vh', paddingTop: '20px' }}>
       <Grid container spacing={3} justifyContent="center" alignItems="center" sx={{ mb: 3 }}>
@@ -306,6 +316,7 @@ const StockScreen = () => {
             const valorInventarioTotal = calcularValorInventario(producto, stockTotal);
             const stockBodega = bodegaSeleccionada && bodegaSeleccionada !== 'general' ? producto.stocks[bodegaSeleccionada] || 0 : stockTotal;
             const valorInventarioBodega = calcularValorInventario(producto, stockBodega);
+            const { label, color } = getStockStatus(stockBodega);
 
             return (
               <Grid item xs={12} sm={6} md={4} key={producto.id}>
@@ -342,6 +353,7 @@ const StockScreen = () => {
                             <IconButton onClick={() => handleEditClick(producto.id)} sx={{ color: '#5E55FE' }}>
                               <EditIcon />
                             </IconButton>
+                            <Chip label={label} color={color} sx={{ mt: 1 }} />
                           </>
                         )}
                       </>
@@ -349,6 +361,7 @@ const StockScreen = () => {
                       <>
                         <Typography variant="body1">Stock total: {stockTotal}</Typography>
                         <Typography variant="body1">Valor en Inventario: {formatCurrency(valorInventarioTotal)}</Typography>
+                        <Chip label={label} color={color} sx={{ mt: 1 }} />
                       </>
                     )}
                   </CardContent>
@@ -395,4 +408,3 @@ const StockScreen = () => {
 };
 
 export default StockScreen;
-

@@ -1,8 +1,7 @@
 import React, { useState } from 'react';
 import { Box, Tabs, Tab, Typography, AppBar } from '@mui/material';
 import CategoriaTable from './CategoriaTable';
-import MensajeWhatsApp from './MensajeWhatsApp';
-import HorarioAtencion from './HorarioAtencion'; // Importamos el nuevo componente
+import SubcategoriaTable from './SubcategoriaTable'; // Import the new component for Subcategorias
 import TabPanel from '../GastosScreen/TabPanel';
 
 const ParametrosScreen = () => {
@@ -41,23 +40,17 @@ const ParametrosScreen = () => {
           }}
         >
           <Tab label="Categorías del Menú" id="tab-0" aria-controls="tabpanel-0" />
-          <Tab label="Mensajes de WhatsApp" id="tab-1" aria-controls="tabpanel-1" />
-          <Tab label="Horarios de Atención" id="tab-2" aria-controls="tabpanel-2" />
+          <Tab label="Subcategorías" id="tab-1" aria-controls="tabpanel-1" />
         </Tabs>
       </AppBar>
       <TabPanel value={tabValue} index={0}>
         <CategoriaTable />
       </TabPanel>
       <TabPanel value={tabValue} index={1}>
-        <MensajeWhatsApp />
-      </TabPanel>
-      <TabPanel value={tabValue} index={2}>
-        <HorarioAtencion />
+        <SubcategoriaTable />
       </TabPanel>
     </Box>
   );
 };
 
 export default ParametrosScreen;
-
-
