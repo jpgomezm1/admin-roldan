@@ -103,33 +103,40 @@ const CarteraScreen = () => {
   });
 
   const transformOrders = filteredOrders
-    .sort((a, b) => new Date(a.fecha_hora) - new Date(b.fecha_hora))
-    .map((order) => {
-      const productos = JSON.parse(order.productos);
-      const productosDescripcion = productos
-        .map((prod) => `${productsMap[prod.id]} (x${prod.quantity})`)
-        .join(', ');
+  .map((order) => {
+    const productos = JSON.parse(order.productos);
+    const productosDescripcion = productos
+      .map((prod) => `${productsMap[prod.id]} (x${prod.quantity})`)
+      .join(', ');
 
-      const totalVenta = order.total_con_descuento || order.total_productos;
+    const totalVenta = order.total_con_descuento || order.total_productos;
 
-      return {
-        id: order.id,
-        nombre_completo: order.nombre_completo,
-        numero_telefono: order.numero_telefono,
-        direccion: order.direccion,
-        fecha: order.fecha_hora,
-        productos: productosDescripcion,
-        productosDetalles: productos,
-        estado: order.estado,
-        total: order.total_con_descuento || order.total_productos,
-        comercial_id: order.comercial_id,
-        nit: order.nit,
-        total_venta: totalVenta,
-        factura_url: order.factura_url,
-        recibo_url: order.recibo_url,
-        diasCartera: order.diasCartera
-      };
-    });
+    return {
+      id: order.id,
+      nombre_completo: order.nombre_completo,
+      numero_telefono: order.numero_telefono,
+      direccion: order.direccion,
+      fecha: order.fecha_hora,
+      productos: productosDescripcion,
+      productosDetalles: productos,
+      estado: order.estado,
+      total: order.total_con_descuento || order.total_productos,
+      comercial_id: order.comercial_id,
+      nit: order.nit,
+      total_venta: totalVenta,
+      factura_url: order.factura_url,
+      recibo_url: order.recibo_url,
+      diasCartera: calculateDiasParaVencimiento(order.fecha_hora, order.diasCartera)
+    };
+  })
+  .sort((a, b) => {
+    // Priorizar por estado primero para asegurar que los pagados estén al final
+    if (a.estado === 'Factura Pagada' && b.estado !== 'Factura Pagada') return 1;
+    if (a.estado !== 'Factura Pagada' && b.estado === 'Factura Pagada') return -1;
+
+    // Ordenar por días de vencimiento en orden ascendente (los más vencidos primero, incluso si son negativos)
+    return a.diasCartera - b.diasCartera;
+  });
 
   const uniqueDates = ['Todas', ...Array.from(new Set(
     orders.map((order) => order.fecha_hora.split(' ')[0])
@@ -215,3 +222,5 @@ const CarteraScreen = () => {
 };
 
 export default CarteraScreen;
+
+

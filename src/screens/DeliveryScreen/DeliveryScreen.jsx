@@ -102,31 +102,31 @@ const DeliveryScreen = () => {
   });
 
   const transformOrders = filteredOrders
-    .sort((a, b) => new Date(a.fecha_hora) - new Date(b.fecha_hora))
-    .map((order) => {
-      const productos = JSON.parse(order.productos);
-      const productosDescripcion = productos
-        .map((prod) => `${productsMap[prod.id]} (x${prod.quantity})`)
-        .join(', ');
+  .sort((a, b) => new Date(b.fecha_hora) - new Date(a.fecha_hora)) // Orden descendente
+  .map((order) => {
+    const productos = JSON.parse(order.productos);
+    const productosDescripcion = productos
+      .map((prod) => `${productsMap[prod.id]} (x${prod.quantity})`)
+      .join(', ');
 
-      const totalVenta = order.total_con_descuento || order.total_productos;
+    const totalVenta = order.total_con_descuento || order.total_productos;
 
-      return {
-        id: order.id,
-        nombre_completo: order.nombre_completo,
-        numero_telefono: order.numero_telefono,
-        direccion: order.direccion,
-        fecha: order.fecha_hora,
-        productos: productosDescripcion,
-        productosDetalles: productos,
-        estado: order.estado,
-        total: order.total_productos,
-        comercial_id: order.comercial_id,
-        nit: order.nit,
-        total_venta: totalVenta,
-        factura_url: order.factura_url // Añadir URL de factura aquí
-      };
-    });
+    return {
+      id: order.id,
+      nombre_completo: order.nombre_completo,
+      numero_telefono: order.numero_telefono,
+      direccion: order.direccion,
+      fecha: order.fecha_hora,
+      productos: productosDescripcion,
+      productosDetalles: productos,
+      estado: order.estado,
+      total: order.total_productos,
+      comercial_id: order.comercial_id,
+      nit: order.nit,
+      total_venta: totalVenta,
+      factura_url: order.factura_url // Añadir URL de factura aquí
+    };
+  });
 
   const totalVentas = transformOrders.reduce((sum, order) => sum + order.total_venta, 0);
   const totalVentasPagadas = transformOrders.filter(order => order.estado === 'Factura Pagada').reduce((sum, order) => sum + order.total_venta, 0);

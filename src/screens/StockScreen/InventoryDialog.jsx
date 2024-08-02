@@ -40,6 +40,7 @@ const InventoryDialog = ({ open, handleClose, productos, handleSaveMovement, bod
   const [search, setSearch] = useState('');
   const [bodegaOrigen, setBodegaOrigen] = useState('');
   const [bodegaDestino, setBodegaDestino] = useState('');
+  const [nombreUsuario, setNombreUsuario] = useState(''); // Estado para el nombre del usuario
 
   const handleTipoMovimientoChange = (event) => {
     setTipoMovimiento(event.target.value);
@@ -53,11 +54,15 @@ const InventoryDialog = ({ open, handleClose, productos, handleSaveMovement, bod
     setCambiosStock(prev => ({ ...prev, [id]: cantidad }));
   };
 
+  const handleNombreUsuarioChange = (event) => {
+    setNombreUsuario(event.target.value);
+  };
+
   const handleSave = () => {
     const bodegaOrigenId = tipoMovimiento === 'salida' ? bodegaDestino : null;
     const bodegaDestinoId = tipoMovimiento === 'entrada' ? bodegaDestino : null;
 
-    handleSaveMovement(tipoMovimiento, comentario, cambiosStock, bodegaOrigenId, bodegaDestinoId);
+    handleSaveMovement(tipoMovimiento, comentario, cambiosStock, bodegaOrigenId, bodegaDestinoId, nombreUsuario);
     handleClose();
   };
 
@@ -227,6 +232,13 @@ const InventoryDialog = ({ open, handleClose, productos, handleSaveMovement, bod
           margin="normal"
           value={comentario}
           onChange={handleComentarioChange}
+        />
+        <TextField
+          label="Nombre del Usuario"
+          fullWidth
+          margin="normal"
+          value={nombreUsuario}
+          onChange={handleNombreUsuarioChange}
         />
       </DialogContent>
       <DialogActions>

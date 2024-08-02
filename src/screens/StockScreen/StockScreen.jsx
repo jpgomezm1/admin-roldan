@@ -1,9 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
-import {
-  Container, Grid, Card, CardContent, Typography, TextField,
-  CircularProgress, IconButton, InputAdornment, Button, MenuItem, Select, FormControl, InputLabel, Dialog, DialogActions, DialogContent, DialogTitle, Box, Chip
-} from '@mui/material';
+import { Container, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Paper, TextField, CircularProgress, IconButton, InputAdornment, Button, MenuItem, Select, FormControl, InputLabel, Dialog, DialogActions, DialogContent, DialogTitle, Chip, Grid} from '@mui/material';
 import EditIcon from '@mui/icons-material/Edit';
 import SaveIcon from '@mui/icons-material/Save';
 import CancelIcon from '@mui/icons-material/Cancel';
@@ -25,25 +22,27 @@ const formatCurrency = (value) => {
     style: 'currency',
     currency: 'COP',
     minimumFractionDigits: 0,
-    maximumFractionDigits: 0
+    maximumFractionDigits: 0,
   }).format(value);
 };
 
-const StyledCard = styled(Card)({
-  border: '1px solid black',
-  borderRadius: '16px',
-  transition: 'transform 0.3s',
-  '&:hover': {
-    transform: 'scale(1.02)',
-  }
-});
+const StyledTableCell = styled(TableCell)(({ theme }) => ({
+  backgroundColor: theme.palette.common.black,
+  color: theme.palette.common.white,
+  fontWeight: 'bold',
+}));
 
 const StockScreen = () => {
   const [productos, setProductos] = useState([]);
   const [bodegas, setBodegas] = useState([]);
   const [bodegaSeleccionada, setBodegaSeleccionada] = useState('general');
+  const [categoriaFiltro, setCategoriaFiltro] = useState('');
+  const [subcategoriaFiltro, setSubcategoriaFiltro] = useState('');
+  const [categorias, setCategorias] = useState([]);
+  const [subcategorias, setSubcategorias] = useState([]);
   const [loading, setLoading] = useState(true);
   const [stockChanges, setStockChanges] = useState({});
+  const [stockLimits, setStockLimits] = useState({});
   const [editing, setEditing] = useState({});
   const [search, setSearch] = useState('');
   const [dialogOpen, setDialogOpen] = useState(false);
@@ -57,12 +56,19 @@ const StockScreen = () => {
     fetchProductos();
   }, []);
 
+  useEffect(() => {
+    const uniqueCategorias = [...new Set(productos.map((p) => p.categoria))];
+    setCategorias(uniqueCategorias);
+    const uniqueSubcategorias = [...new Set(productos.map((p) => p.subcategoria))];
+    setSubcategorias(uniqueSubcategorias);
+  }, [productos]);
+
   const fetchBodegas = async () => {
     try {
       const response = await axios.get(`${apiBaseUrl}/bodegas`, {
         headers: {
-          Authorization: `Bearer ${token}`
-        }
+          Authorization: `Bearer ${token}`,
+        },
       });
       setBodegas(response.data);
     } catch (error) {
@@ -74,8 +80,8 @@ const StockScreen = () => {
     try {
       const response = await axios.get(`${apiBaseUrl}/productos`, {
         headers: {
-          Authorization: `Bearer ${token}`
-        }
+          Authorization: `Bearer ${token}`,
+        },
       });
       setProductos(response.data);
       setLoading(false);
@@ -90,27 +96,55 @@ const StockScreen = () => {
     fetchProductos();
   };
 
+  const handleCategoriaChange = (event) => {
+    setCategoriaFiltro(event.target.value);
+  };
+
+  const handleSubcategoriaChange = (event) => {
+    setSubcategoriaFiltro(event.target.value);
+  };
+
   const handleStockChange = (id, cantidad) => {
-    setStockChanges(prev => ({ ...prev, [id]: cantidad }));
+    setStockChanges((prev) => ({ ...prev, [id]: cantidad }));
+  };
+
+  const handleStockLimitChange = (id, limite) => {
+    setStockLimits((prev) => ({ ...prev, [id]: limite }));
   };
 
   const handleSaveStock = async (id) => {
     const cantidad = stockChanges[id];
+    const limite = stockLimits[id] || 50;
     if (cantidad !== undefined) {
       try {
-        const response = await axios.post(`${apiBaseUrl}/productos/${id}/stock`, {
-          cantidad,
-          bodega_id: bodegaSeleccionada
-        }, {
-          headers: {
-            Authorization: `Bearer ${token}`
+        const response = await axios.post(
+          `${apiBaseUrl}/productos/${id}/stock`,
+          {
+            cantidad,
+            limite,
+            bodega_id: bodegaSeleccionada,
+          },
+          {
+            headers: {
+              Authorization: `Bearer ${token}`,
+            },
           }
-        });
-        setEditing(prev => ({ ...prev, [id]: false }));
-        setProductos(prevProductos => prevProductos.map(producto =>
-          producto.id === id ? { ...producto, stocks: { ...producto.stocks, [bodegaSeleccionada]: response.data.stock } } : producto
-        ));
-        alert('Stock actualizado con éxito');
+        );
+        setEditing((prev) => ({ ...prev, [id]: false }));
+        setProductos((prevProductos) =>
+          prevProductos.map((producto) =>
+            producto.id === id
+              ? {
+                  ...producto,
+                  stocks: {
+                    ...producto.stocks,
+                    [bodegaSeleccionada]: response.data.stock,
+                  },
+                }
+              : producto
+          )
+        );
+        alert('Stock y límite actualizado con éxito');
       } catch (error) {
         console.error('Error al actualizar el stock', error);
       }
@@ -118,11 +152,11 @@ const StockScreen = () => {
   };
 
   const handleEditClick = (id) => {
-    setEditing(prev => ({ ...prev, [id]: true }));
+    setEditing((prev) => ({ ...prev, [id]: true }));
   };
 
   const handleCancelClick = (id) => {
-    setEditing(prev => ({ ...prev, [id]: false }));
+    setEditing((prev) => ({ ...prev, [id]: false }));
   };
 
   const handleSearchChange = (event) => {
@@ -161,11 +195,15 @@ const StockScreen = () => {
   const handleSaveNewBodega = async () => {
     if (newBodegaName.trim() !== '') {
       try {
-        const response = await axios.post(`${apiBaseUrl}/bodegas`, { nombre: newBodegaName }, {
-          headers: {
-            Authorization: `Bearer ${token}`
+        const response = await axios.post(
+          `${apiBaseUrl}/bodegas`,
+          { nombre: newBodegaName },
+          {
+            headers: {
+              Authorization: `Bearer ${token}`,
+            },
           }
-        });
+        );
         setBodegas([...bodegas, response.data]);
         setNewBodegaName('');
         setNewBodegaDialogOpen(false);
@@ -175,19 +213,29 @@ const StockScreen = () => {
     }
   };
 
-  const handleSaveMovement = async (tipoMovimiento, comentario, cambiosStock, bodegaOrigenId, bodegaDestinoId) => {
+  const handleSaveMovement = async (
+    tipoMovimiento,
+    comentario,
+    cambiosStock,
+    bodegaOrigenId,
+    bodegaDestinoId
+  ) => {
     try {
-      const response = await axios.post(`${apiBaseUrl}/inventarios/movimiento`, {
-        tipo: tipoMovimiento,
-        comentario: comentario,
-        cambiosStock: cambiosStock,
-        bodegaOrigenId: bodegaOrigenId,
-        bodegaDestinoId: bodegaDestinoId
-      }, {
-        headers: {
-          Authorization: `Bearer ${token}`
+      const response = await axios.post(
+        `${apiBaseUrl}/inventarios/movimiento`,
+        {
+          tipo: tipoMovimiento,
+          comentario: comentario,
+          cambiosStock: cambiosStock,
+          bodegaOrigenId: bodegaOrigenId,
+          bodegaDestinoId: bodegaDestinoId,
+        },
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
         }
-      });
+      );
       alert(response.data.mensaje);
       fetchProductos();
     } catch (error) {
@@ -206,15 +254,25 @@ const StockScreen = () => {
     return stock * producto.costo;
   };
 
+  const calcularLimiteStockTotal = (producto) => {
+    // Ensure stockLimits are summed as integers
+    return bodegas.reduce((total, bodega) => {
+      const limitKey = `${producto.id}-${bodega.id}`;
+      const stockLimit = parseInt(stockLimits[limitKey] || 50); // Default to 50 if undefined, ensuring it's treated as an integer
+      return total + stockLimit;
+    }, 0);
+  };
+
   const calcularTotales = () => {
     let totalUnidades = 0;
     let totalMercancia = 0;
     let totalReferencias = 0;
 
-    productos.forEach(producto => {
-      const stock = bodegaSeleccionada && bodegaSeleccionada !== 'general'
-        ? producto.stocks[bodegaSeleccionada] || 0
-        : calcularStockTotal(producto);
+    productos.forEach((producto) => {
+      const stock =
+        bodegaSeleccionada && bodegaSeleccionada !== 'general'
+          ? producto.stocks[bodegaSeleccionada] || 0
+          : calcularStockTotal(producto);
 
       if (stock > 0) {
         totalReferencias += 1;
@@ -229,19 +287,137 @@ const StockScreen = () => {
 
   const { totalUnidades, totalMercancia, totalReferencias } = calcularTotales();
 
-  const filteredProductos = productos.filter(producto =>
-    producto.nombre.toLowerCase().includes(search.toLowerCase())
+  const filteredProductos = productos.filter((producto) =>
+    producto.nombre.toLowerCase().includes(search.toLowerCase()) &&
+    (categoriaFiltro === '' || producto.categoria === categoriaFiltro) &&
+    (subcategoriaFiltro === '' || producto.subcategoria === subcategoriaFiltro)
   );
 
-  const getStockStatus = (stock) => {
-    if (stock > 50) {
-      return { label: 'Bien abastecido', color: 'success' };
+  const getStockStatus = (stock, limite) => {
+    if (stock > limite) {
+      return { label: 'Abastecido', color: 'success' };
     } else if (stock > 0) {
       return { label: 'Poco stock', color: 'warning' };
     } else {
       return { label: 'Agotado', color: 'error' };
     }
   };
+
+  const renderTable = () => (
+    <TableContainer component={Paper} sx={{ mt: 2 }}>
+      <Table>
+        <TableHead>
+          <TableRow>
+            <StyledTableCell>Nombre</StyledTableCell>
+            <StyledTableCell>Precio</StyledTableCell>
+            <StyledTableCell>Costo</StyledTableCell>
+            <StyledTableCell>Categoría</StyledTableCell>
+            <StyledTableCell>Stock</StyledTableCell>
+            <StyledTableCell>Límite de Stock</StyledTableCell>
+            <StyledTableCell>Valor en Inventario</StyledTableCell>
+            <StyledTableCell>Acciones</StyledTableCell>
+            <StyledTableCell>Estatus de Stock</StyledTableCell>
+          </TableRow>
+        </TableHead>
+        <TableBody>
+          {filteredProductos.map((producto) => {
+            const stockTotal = calcularStockTotal(producto);
+            const valorInventarioTotal = calcularValorInventario(producto, stockTotal);
+            const stockBodega =
+              bodegaSeleccionada && bodegaSeleccionada !== 'general'
+                ? producto.stocks[bodegaSeleccionada] || 0
+                : stockTotal;
+            const limiteStock =
+              bodegaSeleccionada === 'general'
+                ? calcularLimiteStockTotal(producto)
+                : stockLimits[`${producto.id}-${bodegaSeleccionada}`] || 50;
+            const valorInventarioBodega = calcularValorInventario(
+              producto,
+              stockBodega
+            );
+            const { label, color } = getStockStatus(stockBodega, limiteStock);
+
+            return (
+              <TableRow key={producto.id}>
+                <TableCell>{producto.nombre}</TableCell>
+                <TableCell>{formatCurrency(producto.precio)}</TableCell>
+                <TableCell>{formatCurrency(producto.costo)}</TableCell>
+                <TableCell>{producto.categoria}</TableCell>
+                <TableCell>
+                  {editing[producto.id] ? (
+                    <>
+                      <TextField
+                        label="Stock"
+                        type="number"
+                        variant="outlined"
+                        fullWidth
+                        margin="normal"
+                        value={
+                          stockChanges[producto.id] !== undefined
+                            ? stockChanges[producto.id]
+                            : producto.stocks &&
+                              producto.stocks[bodegaSeleccionada] !== undefined
+                            ? producto.stocks[bodegaSeleccionada]
+                            : calcularStockTotal(producto) // Calculate total stock for 'general' case
+                        }
+                        onChange={(e) =>
+                          handleStockChange(producto.id, e.target.value)
+                        }
+                      />
+                      <TextField
+                        label="Límite de Stock"
+                        type="number"
+                        variant="outlined"
+                        fullWidth
+                        margin="normal"
+                        value={stockLimits[`${producto.id}-${bodegaSeleccionada}`] || limiteStock}
+                        onChange={(e) =>
+                          handleStockLimitChange(`${producto.id}-${bodegaSeleccionada}`, e.target.value)
+                        }
+                      />
+                      <IconButton
+                        onClick={() => handleSaveStock(producto.id)}
+                        sx={{ color: '#5E55FE' }}
+                      >
+                        <SaveIcon />
+                      </IconButton>
+                      <IconButton
+                        onClick={() => handleCancelClick(producto.id)}
+                        color="secondary"
+                      >
+                        <CancelIcon />
+                      </IconButton>
+                    </>
+                  ) : bodegaSeleccionada === 'general' ? (
+                    stockTotal // Show total stock for 'general'
+                  ) : (
+                    producto.stocks[bodegaSeleccionada] || 0
+                  )}
+                </TableCell>
+                <TableCell>{limiteStock}</TableCell>
+                <TableCell>
+                  {bodegaSeleccionada && bodegaSeleccionada !== 'general'
+                    ? formatCurrency(valorInventarioBodega)
+                    : formatCurrency(valorInventarioTotal)}
+                </TableCell>
+                <TableCell>
+                  <IconButton
+                    onClick={() => handleEditClick(producto.id)}
+                    sx={{ color: '#5E55FE' }}
+                  >
+                    <EditIcon />
+                  </IconButton>
+                </TableCell>
+                <TableCell>
+                  <Chip label={label} color={color} sx={{ mt: 1 }} />
+                </TableCell>
+              </TableRow>
+            );
+          })}
+        </TableBody>
+      </Table>
+    </TableContainer>
+  );
 
   return (
     <Container maxWidth="xl" style={{ minHeight: '100vh', paddingTop: '20px' }}>
@@ -283,93 +459,99 @@ const StockScreen = () => {
           ),
         }}
       />
-      <FormControl variant="outlined" fullWidth margin="normal">
-        <InputLabel>Bodega</InputLabel>
-        <Select
-          value={bodegaSeleccionada}
-          onChange={handleBodegaChange}
-          label="Bodega"
-        >
-          <MenuItem value="general">General</MenuItem>
-          {bodegas.map((bodega) => (
-            <MenuItem key={bodega.id} value={bodega.id}>
-              {bodega.nombre}
-            </MenuItem>
-          ))}
-          <MenuItem value="" onClick={handleNewBodegaDialogOpen}>
-            <AddIcon /> Agregar nueva bodega
-          </MenuItem>
-        </Select>
-      </FormControl>
-      <Button variant="contained" onClick={handleDialogOpen} size="medium" sx={{ my: 2, backgroundColor: '#5E55FE', color: 'white', borderRadius: '10px', '&:hover': { backgroundColor: '#7b45a1' }, mr: 1 }}>
+      <Grid container spacing={2} sx={{ mt: 2, mb: 2 }}>
+        <Grid item xs={12} sm={4}>
+          <FormControl variant="outlined" fullWidth>
+            <InputLabel>Categoría</InputLabel>
+            <Select
+              value={categoriaFiltro}
+              onChange={handleCategoriaChange}
+              label="Categoría"
+            >
+              <MenuItem value="">
+                <em>Todas</em>
+              </MenuItem>
+              {categorias.map((categoria, index) => (
+                <MenuItem key={index} value={categoria}>
+                  {categoria}
+                </MenuItem>
+              ))}
+            </Select>
+          </FormControl>
+        </Grid>
+        <Grid item xs={12} sm={4}>
+          <FormControl variant="outlined" fullWidth>
+            <InputLabel>Subcategoría</InputLabel>
+            <Select
+              value={subcategoriaFiltro}
+              onChange={handleSubcategoriaChange}
+              label="Subcategoría"
+            >
+              <MenuItem value="">
+                <em>Todas</em>
+              </MenuItem>
+              {subcategorias.map((subcategoria, index) => (
+                <MenuItem key={index} value={subcategoria}>
+                  {subcategoria}
+                </MenuItem>
+              ))}
+            </Select>
+          </FormControl>
+        </Grid>
+        <Grid item xs={12} sm={4}>
+          <FormControl variant="outlined" fullWidth>
+            <InputLabel>Bodega</InputLabel>
+            <Select
+              value={bodegaSeleccionada}
+              onChange={handleBodegaChange}
+              label="Bodega"
+            >
+              <MenuItem value="general">General</MenuItem>
+              {bodegas.map((bodega) => (
+                <MenuItem key={bodega.id} value={bodega.id}>
+                  {bodega.nombre}
+                </MenuItem>
+              ))}
+              <MenuItem value="" onClick={handleNewBodegaDialogOpen}>
+                <AddIcon /> Agregar nueva bodega
+              </MenuItem>
+            </Select>
+          </FormControl>
+        </Grid>
+      </Grid>
+      <Button
+        variant="contained"
+        onClick={handleDialogOpen}
+        size="medium"
+        sx={{
+          my: 2,
+          backgroundColor: '#5E55FE',
+          color: 'white',
+          borderRadius: '10px',
+          '&:hover': { backgroundColor: '#7b45a1' },
+          mr: 1,
+        }}
+      >
         Registrar Movimiento de Inventario
       </Button>
-      <Button variant="contained" onClick={handleMovimientosDialogOpen} size="medium" sx={{ my: 2, backgroundColor: '#5E55FE', color: 'white', borderRadius: '10px', '&:hover': { backgroundColor: '#7b45a1' }, }}>
+      <Button
+        variant="contained"
+        onClick={handleMovimientosDialogOpen}
+        size="medium"
+        sx={{
+          my: 2,
+          backgroundColor: '#5E55FE',
+          color: 'white',
+          borderRadius: '10px',
+          '&:hover': { backgroundColor: '#7b45a1' },
+        }}
+      >
         Ver Movimientos de Inventario
       </Button>
       {loading ? (
         <CircularProgress />
       ) : (
-        <Grid container spacing={3}>
-          {filteredProductos.map(producto => {
-            const stockTotal = calcularStockTotal(producto);
-            const valorInventarioTotal = calcularValorInventario(producto, stockTotal);
-            const stockBodega = bodegaSeleccionada && bodegaSeleccionada !== 'general' ? producto.stocks[bodegaSeleccionada] || 0 : stockTotal;
-            const valorInventarioBodega = calcularValorInventario(producto, stockBodega);
-            const { label, color } = getStockStatus(stockBodega);
-
-            return (
-              <Grid item xs={12} sm={6} md={4} key={producto.id}>
-                <StyledCard>
-                  <CardContent>
-                    <Typography variant="h5">{producto.nombre}</Typography>
-                    <Typography variant="body1">Precio: {formatCurrency(producto.precio)}</Typography>
-                    <Typography variant="body1">Costo: {formatCurrency(producto.costo)}</Typography>
-                    <Typography variant="body2">Categoría: {producto.categoria}</Typography>
-                    {bodegaSeleccionada && bodegaSeleccionada !== 'general' ? (
-                      <>
-                        {editing[producto.id] ? (
-                          <>
-                            <TextField
-                              label="Stock"
-                              type="number"
-                              variant="outlined"
-                              fullWidth
-                              margin="normal"
-                              value={stockChanges[producto.id] !== undefined ? stockChanges[producto.id] : (producto.stocks && producto.stocks[bodegaSeleccionada]) || 0}
-                              onChange={(e) => handleStockChange(producto.id, e.target.value)}
-                            />
-                            <IconButton onClick={() => handleSaveStock(producto.id)} sx={{ color: '#5E55FE' }}>
-                              <SaveIcon />
-                            </IconButton>
-                            <IconButton onClick={() => handleCancelClick(producto.id)} color="secondary">
-                              <CancelIcon />
-                            </IconButton>
-                          </>
-                        ) : (
-                          <>
-                            <Typography variant="body1">Stock: {producto.stocks && producto.stocks[bodegaSeleccionada] !== undefined ? producto.stocks[bodegaSeleccionada] : 0}</Typography>
-                            <Typography variant="body1">Valor en Inventario: {formatCurrency(valorInventarioBodega)}</Typography>
-                            <IconButton onClick={() => handleEditClick(producto.id)} sx={{ color: '#5E55FE' }}>
-                              <EditIcon />
-                            </IconButton>
-                            <Chip label={label} color={color} sx={{ mt: 1 }} />
-                          </>
-                        )}
-                      </>
-                    ) : (
-                      <>
-                        <Typography variant="body1">Stock total: {stockTotal}</Typography>
-                        <Typography variant="body1">Valor en Inventario: {formatCurrency(valorInventarioTotal)}</Typography>
-                        <Chip label={label} color={color} sx={{ mt: 1 }} />
-                      </>
-                    )}
-                  </CardContent>
-                </StyledCard>
-              </Grid>
-            );
-          })}
-        </Grid>
+        renderTable()
       )}
       <InventoryDialog
         open={dialogOpen}

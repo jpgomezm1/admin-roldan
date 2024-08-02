@@ -1,11 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
-import { Button, Grid, Container, CircularProgress, Tabs, Tab, AppBar, Dialog, DialogTitle, DialogContent, DialogActions, TextField, MenuItem, Select, InputLabel, FormControl, Typography, Switch, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Paper, IconButton, FormControlLabel } from '@mui/material';
+import { Button, Grid, Container, CircularProgress, Tabs, Tab, AppBar, Dialog, DialogTitle, DialogContent, DialogActions, TextField, MenuItem, Select, InputLabel, FormControl, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Paper, IconButton,} from '@mui/material';
 import AddCircleOutlineIcon from '@mui/icons-material/AddCircleOutline';
 import EditIcon from '@mui/icons-material/Edit';
 import DeleteIcon from '@mui/icons-material/Delete';
 import { styled } from '@mui/system';
-import ProductoCard from '../../components/ProductCard/ProductCard';
 import ProductoDialog from '../../components/ProductDialog/ProductDialog';
 import ListaPrecios from './ListaPrecios';
 import TabPanel from '../GastosScreen/TabPanel';
@@ -46,8 +45,8 @@ const PaginaProductos = () => {
   const [loading, setLoading] = useState(false);
   const [tabValue, setTabValue] = useState(0);
   const [categoriaFiltro, setCategoriaFiltro] = useState('');
+  const [subcategoriaFiltro, setSubcategoriaFiltro] = useState('');
   const [searchTerm, setSearchTerm] = useState('');
-  const [tableView, setTableView] = useState(false);
   const [subcategorias, setSubcategorias] = useState([]);
 
   const apiBaseUrl = process.env.REACT_APP_BACKEND_URL;
@@ -113,7 +112,9 @@ const PaginaProductos = () => {
             },
           }
         );
-        setProductos(productos.map((p) => (p.id === productoId ? response.data : p)));
+        setProductos(
+          productos.map((p) => (p.id === productoId ? response.data : p))
+        );
         handleClose();
       } catch (error) {
         console.error('Error al editar el producto', error.response);
@@ -217,15 +218,25 @@ const PaginaProductos = () => {
     setCategoriaFiltro(event.target.value);
   };
 
+  const handleSubcategoriaChange = (event) => {
+    setSubcategoriaFiltro(event.target.value);
+  };
+
   const handleSearchChange = (event) => {
     setSearchTerm(event.target.value);
   };
 
   const categorias = [...new Set(productos.map((producto) => producto.categoria))];
 
+  const subcategoriasDisponibles = subcategorias.filter(
+    (subcategoria) =>
+      !categoriaFiltro || subcategoria.categoria_id === categoriaFiltro
+  );
+
   const filteredProductos = productos.filter(
     (producto) =>
       (categoriaFiltro === '' || producto.categoria === categoriaFiltro) &&
+      (subcategoriaFiltro === '' || producto.subcategoria === subcategoriaFiltro) &&
       producto.nombre.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
@@ -239,6 +250,7 @@ const PaginaProductos = () => {
             <StyledTableCell>IVA</StyledTableCell>
             <StyledTableCell>IPO</StyledTableCell>
             <StyledTableCell>Precio Venta</StyledTableCell>
+            <StyledTableCell>Costo</StyledTableCell>
             <StyledTableCell>Categoría</StyledTableCell>
             <StyledTableCell>Subcategoría</StyledTableCell>
             <StyledTableCell>Acciones</StyledTableCell>
@@ -252,6 +264,7 @@ const PaginaProductos = () => {
               <TableCell>5%</TableCell>
               <TableCell>{formatCurrency(producto.ipo)}</TableCell>
               <TableCell>{formatCurrency(producto.precio)}</TableCell>
+              <TableCell>{formatCurrency(producto.costo)}</TableCell>
               <TableCell>{producto.categoria}</TableCell>
               <TableCell>{producto.subcategoria}</TableCell>
               <TableCell>
@@ -352,61 +365,29 @@ const PaginaProductos = () => {
               </FormControl>
             </Grid>
             <Grid item xs={12} sm={6} md={4}>
-              <FormControlLabel
-                control={<Switch checked={tableView} onChange={() => setTableView(!tableView)} />}
-                label="Vista de tabla"
-              />
+              <FormControl fullWidth variant="outlined">
+                <InputLabel>Subcategoría</InputLabel>
+                <Select
+                  value={subcategoriaFiltro}
+                  onChange={handleSubcategoriaChange}
+                  label="Subcategoría"
+                >
+                  <MenuItem value="">
+                    <em>Todas</em>
+                  </MenuItem>
+                  {subcategoriasDisponibles.map((subcategoria) => (
+                    <MenuItem key={subcategoria.id} value={subcategoria.nombre}>
+                      {subcategoria.nombre}
+                    </MenuItem>
+                  ))}
+                </Select>
+              </FormControl>
             </Grid>
           </Grid>
           {loading ? (
             <CircularProgress />
-          ) : tableView ? (
-            renderTable()
           ) : (
-            categorias.map((categoria) => (
-              <div key={categoria}>
-                <Typography
-                  variant="h5"
-                  sx={{ mt: 5, mb: 2, color: '#5E55FE', fontWeight: 'bold' }}
-                >
-                  {categoria}
-                </Typography>
-                {subcategorias
-                  .filter((subcategoria) =>
-                    filteredProductos.some(
-                      (producto) =>
-                        producto.categoria === categoria &&
-                        producto.subcategoria === subcategoria.nombre
-                    )
-                  )
-                  .map((subcategoria) => (
-                    <div key={subcategoria.id}>
-                      <Typography
-                        variant="h6"
-                        sx={{ mt: 3, mb: 2, color: 'black', fontWeight: 'medium' }}
-                      >
-                        {subcategoria.nombre}
-                      </Typography>
-                      <Grid container spacing={3}>
-                        {filteredProductos
-                          .filter(
-                            (producto) =>
-                              producto.categoria === categoria &&
-                              producto.subcategoria === subcategoria.nombre
-                          )
-                          .map((producto, index) => (
-                            <ProductoCard
-                              key={index}
-                              producto={producto}
-                              onDelete={handleDelete}
-                              onEdit={handleEdit}
-                            />
-                          ))}
-                      </Grid>
-                    </div>
-                  ))}
-              </div>
-            ))
+            renderTable()
           )}
           <ProductoDialog
             open={open}

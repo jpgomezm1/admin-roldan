@@ -73,7 +73,8 @@ const MovimientosDialog = ({ open, handleClose }) => {
       Anotación: movimiento.comentario,
       Fecha: dayjs(movimiento.fecha_hora).format('DD MMMM YYYY'),
       BodegaOrigen: movimiento.bodega_origen || '-',
-      BodegaDestino: movimiento.bodega_destino || '-'
+      BodegaDestino: movimiento.bodega_destino || '-',
+      Usuario: movimiento.usuario || '-'  // Incluyendo el usuario en los datos del Excel
     }));
 
     const worksheet = XLSX.utils.json_to_sheet(data);
@@ -145,6 +146,7 @@ const MovimientosDialog = ({ open, handleClose }) => {
                     <StyledTableCell>Fecha</StyledTableCell>
                     <StyledTableCell>Bodega Origen</StyledTableCell>
                     <StyledTableCell>Bodega Destino</StyledTableCell>
+                    <StyledTableCell>Usuario</StyledTableCell> {/* Nuevo campo Usuario */}
                   </TableRow>
                 </TableHead>
                 <TableBody>
@@ -157,6 +159,7 @@ const MovimientosDialog = ({ open, handleClose }) => {
                       <TableCell>{dayjs(movimiento.fecha_hora).format('DD MMMM YYYY')}</TableCell>
                       <TableCell>{movimiento.bodega_origen || '-'}</TableCell>
                       <TableCell>{movimiento.bodega_destino || '-'}</TableCell>
+                      <TableCell>{movimiento.usuario || '-'}</TableCell> {/* Mostrar el nombre del usuario */}
                     </TableRow>
                   ))}
                 </TableBody>
@@ -176,4 +179,3 @@ const MovimientosDialog = ({ open, handleClose }) => {
 };
 
 export default MovimientosDialog;
-

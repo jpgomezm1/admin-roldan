@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
-import { Button, CircularProgress, IconButton, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Paper, Dialog, DialogTitle, DialogContent, DialogActions } from '@mui/material';
+import { Button, CircularProgress, IconButton, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Paper, Dialog, DialogTitle, DialogContent, DialogActions} from '@mui/material';
 import AddCircleOutlineIcon from '@mui/icons-material/AddCircleOutline';
 import EditIcon from '@mui/icons-material/Edit';
 import DeleteIcon from '@mui/icons-material/Delete';
@@ -12,7 +12,7 @@ import PushPinIcon from '@mui/icons-material/PushPin';
 const StyledTableCell = styled(TableCell)(({ theme }) => ({
   backgroundColor: theme.palette.common.black,
   color: theme.palette.common.white,
-  fontWeight: 'bold'
+  fontWeight: 'bold',
 }));
 
 const WideDialog = styled(Dialog)(({ theme }) => ({
@@ -44,7 +44,7 @@ const ListaPrecios = () => {
     setLoading(true);
     try {
       const response = await axios.get(`${apiBaseUrl}/listasprecios`, {
-        headers: { Authorization: `Bearer ${token}` }
+        headers: { Authorization: `Bearer ${token}` },
       });
       setListas(response.data);
     } catch (error) {
@@ -57,7 +57,7 @@ const ListaPrecios = () => {
     setLoading(true);
     try {
       const response = await axios.get(`${apiBaseUrl}/productos`, {
-        headers: { Authorization: `Bearer ${token}` }
+        headers: { Authorization: `Bearer ${token}` },
       });
       setProductos(response.data);
     } catch (error) {
@@ -73,21 +73,25 @@ const ListaPrecios = () => {
     }
 
     setLoading(true);
-    const data = { 
-      nombre: nuevaLista.nombre, 
+    const data = {
+      nombre: nuevaLista.nombre,
       descuento: nuevaLista.descuento,
-      establecimiento: establecimiento
+      establecimiento: establecimiento,
     };
 
     try {
       if (editMode) {
-        const response = await axios.put(`${apiBaseUrl}/listasprecios/${listaId}`, data, {
-          headers: { Authorization: `Bearer ${token}` }
-        });
-        setListas(listas.map(l => (l.id === listaId ? response.data : l)));
+        const response = await axios.put(
+          `${apiBaseUrl}/listasprecios/${listaId}`,
+          data,
+          {
+            headers: { Authorization: `Bearer ${token}` },
+          }
+        );
+        setListas(listas.map((l) => (l.id === listaId ? response.data : l)));
       } else {
         const response = await axios.post(`${apiBaseUrl}/listasprecios`, data, {
-          headers: { Authorization: `Bearer ${token}` }
+          headers: { Authorization: `Bearer ${token}` },
         });
         setListas([...listas, response.data]);
       }
@@ -98,20 +102,20 @@ const ListaPrecios = () => {
     setLoading(false);
   };
 
-  const handleEdit = lista => {
+  const handleEdit = (lista) => {
     setNuevaLista({ nombre: lista.nombre, descuento: lista.descuento });
     setListaId(lista.id);
     setEditMode(true);
     setOpen(true);
   };
 
-  const handleDelete = async lista => {
+  const handleDelete = async (lista) => {
     setLoading(true);
     try {
       await axios.delete(`${apiBaseUrl}/listasprecios/${lista.id}`, {
-        headers: { Authorization: `Bearer ${token}` }
+        headers: { Authorization: `Bearer ${token}` },
       });
-      setListas(listas.filter(l => l.id !== lista.id));
+      setListas(listas.filter((l) => l.id !== lista.id));
     } catch (error) {
       console.error('Error al eliminar la lista de precios', error);
     }
@@ -130,10 +134,10 @@ const ListaPrecios = () => {
 
   const handleChange = (e) => {
     const { name, value } = e.target;
-    setNuevaLista(prev => ({ ...prev, [name]: value }));
+    setNuevaLista((prev) => ({ ...prev, [name]: value }));
   };
 
-  const handleOpenProductosDialog = lista => {
+  const handleOpenProductosDialog = (lista) => {
     setSelectedLista(lista);
     setProductosDialogOpen(true);
   };
@@ -144,7 +148,7 @@ const ListaPrecios = () => {
   };
 
   const calculateDiscountedPrice = (precioBase, descuento) => {
-    return precioBase - (precioBase * (descuento / 100));
+    return precioBase - precioBase * (descuento / 100);
   };
 
   const calculateIva = (precio) => {
@@ -157,7 +161,7 @@ const ListaPrecios = () => {
       style: 'currency',
       currency: 'COP',
       minimumFractionDigits: 0,
-      maximumFractionDigits: 0
+      maximumFractionDigits: 0,
     }).format(value);
   };
 
@@ -165,12 +169,30 @@ const ListaPrecios = () => {
     return ((ipo / precioDescuento) * 100).toFixed(2);
   };
 
+  const calculatePrecioVenta = (precioDescuento, iva, ipo) => {
+    return precioDescuento + iva + ipo;
+  };
+
   return (
     <div>
-      <Button startIcon={<AddCircleOutlineIcon />} onClick={handleClickOpen} variant="contained" size="large" sx={{ mt: 2, backgroundColor: '#5E55FE', color: 'white', borderRadius: '10px', '&:hover': { backgroundColor: '#7b45a1' }, }}>
+      <Button
+        startIcon={<AddCircleOutlineIcon />}
+        onClick={handleClickOpen}
+        variant="contained"
+        size="large"
+        sx={{
+          mt: 2,
+          backgroundColor: '#5E55FE',
+          color: 'white',
+          borderRadius: '10px',
+          '&:hover': { backgroundColor: '#7b45a1' },
+        }}
+      >
         Agregar Lista de Precios
       </Button>
-      {loading ? <CircularProgress /> : (
+      {loading ? (
+        <CircularProgress />
+      ) : (
         <TableContainer component={Paper} sx={{ mt: 5 }}>
           <Table>
             <TableHead>
@@ -213,7 +235,9 @@ const ListaPrecios = () => {
         editMode={editMode}
       />
       <WideDialog open={productosDialogOpen} onClose={handleCloseProductosDialog}>
-        <DialogTitle>Productos de la Lista: {selectedLista && selectedLista.nombre}</DialogTitle>
+        <DialogTitle>
+          Productos de la Lista: {selectedLista && selectedLista.nombre}
+        </DialogTitle>
         <DialogContent>
           <Table>
             <TableHead>
@@ -225,26 +249,33 @@ const ListaPrecios = () => {
                 <StyledTableCell>IVA</StyledTableCell>
                 <StyledTableCell>IPO</StyledTableCell>
                 <StyledTableCell>% IPO</StyledTableCell>
+                <StyledTableCell>Precio Venta</StyledTableCell>
               </TableRow>
             </TableHead>
             <TableBody>
-              {selectedLista && productos.map((producto) => {
-                const precioDescuento = calculateDiscountedPrice(producto.precio_base, selectedLista.descuento);
-                const iva = calculateIva(precioDescuento);
-                const ipo = parseFloat(producto.ipo);
-                const ipoPercentage = calculateIpoPercentage(ipo, precioDescuento);
-                return (
-                  <TableRow key={producto.id}>
-                    <TableCell>{producto.nombre}</TableCell>
-                    <TableCell>{formatCurrency(producto.precio_base)}</TableCell>
-                    <TableCell>{selectedLista.descuento}%</TableCell>
-                    <TableCell>{formatCurrency(precioDescuento)}</TableCell>
-                    <TableCell>{formatCurrency(iva)}</TableCell>
-                    <TableCell>{formatCurrency(ipo)}</TableCell>
-                    <TableCell>{ipoPercentage}%</TableCell>
-                  </TableRow>
-                );
-              })}
+              {selectedLista &&
+                productos.map((producto) => {
+                  const precioDescuento = calculateDiscountedPrice(
+                    producto.precio_base,
+                    selectedLista.descuento
+                  );
+                  const iva = calculateIva(precioDescuento);
+                  const ipo = parseFloat(producto.ipo);
+                  const ipoPercentage = calculateIpoPercentage(ipo, precioDescuento);
+                  const precioVenta = calculatePrecioVenta(precioDescuento, iva, ipo);
+                  return (
+                    <TableRow key={producto.id}>
+                      <TableCell>{producto.nombre}</TableCell>
+                      <TableCell>{formatCurrency(producto.precio_base)}</TableCell>
+                      <TableCell>{selectedLista.descuento}%</TableCell>
+                      <TableCell>{formatCurrency(precioDescuento)}</TableCell>
+                      <TableCell>{formatCurrency(iva)}</TableCell>
+                      <TableCell>{formatCurrency(ipo)}</TableCell>
+                      <TableCell>{ipoPercentage}%</TableCell>
+                      <TableCell>{formatCurrency(precioVenta)}</TableCell>
+                    </TableRow>
+                  );
+                })}
             </TableBody>
           </Table>
         </DialogContent>
