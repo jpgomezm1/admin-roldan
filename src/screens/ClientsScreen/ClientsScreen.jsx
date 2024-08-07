@@ -1,6 +1,32 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
-import { Box, Button, Dialog, DialogActions, DialogContent, DialogTitle, TextField, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Paper, IconButton, Typography, Select, MenuItem, FormControl, InputLabel, Tabs, Tab, AppBar, CircularProgress, Switch} from '@mui/material';
+import {
+  Box,
+  Button,
+  Dialog,
+  DialogActions,
+  DialogContent,
+  DialogTitle,
+  TextField,
+  Table,
+  TableBody,
+  TableCell,
+  TableContainer,
+  TableHead,
+  TableRow,
+  Paper,
+  IconButton,
+  Typography,
+  Select,
+  MenuItem,
+  FormControl,
+  InputLabel,
+  Tabs,
+  Tab,
+  AppBar,
+  CircularProgress,
+  Switch,
+} from '@mui/material';
 import AddIcon from '@mui/icons-material/Add';
 import { useSelector } from 'react-redux';
 import { styled } from '@mui/system';
@@ -14,7 +40,7 @@ import PedidosClienteDialog from './PedidosClienteDialog';
 const StyledTableCell = styled(TableCell)(({ theme }) => ({
   backgroundColor: theme.palette.common.black,
   color: theme.palette.common.white,
-  fontWeight: 'bold'
+  fontWeight: 'bold',
 }));
 
 const StyledTableRow = styled(TableRow)(({ theme }) => ({
@@ -29,7 +55,7 @@ const formatCurrency = (value) => {
     style: 'currency',
     currency: 'COP',
     minimumFractionDigits: 0,
-    maximumFractionDigits: 0
+    maximumFractionDigits: 0,
   }).format(value);
 };
 
@@ -50,7 +76,8 @@ const ClientsScreen = () => {
     diasCartera: '',
     listaPreciosId: '',
     direccion: '',
-    ciudad: ''
+    ciudad: '',
+    tipo: 'Persona Natural', // Campo tipo inicializado
   });
   const [fileUploaded, setFileUploaded] = useState(false);
   const [listasPrecios, setListasPrecios] = useState([]);
@@ -68,8 +95,8 @@ const ClientsScreen = () => {
       try {
         const response = await axios.get(`${process.env.REACT_APP_BACKEND_URL}/clientes`, {
           headers: {
-            Authorization: `Bearer ${token}`
-          }
+            Authorization: `Bearer ${token}`,
+          },
         });
         setClients(response.data);
       } catch (error) {
@@ -82,8 +109,8 @@ const ClientsScreen = () => {
       try {
         const response = await axios.get(`${process.env.REACT_APP_BACKEND_URL}/listasprecios`, {
           headers: {
-            Authorization: `Bearer ${token}`
-          }
+            Authorization: `Bearer ${token}`,
+          },
         });
         setListasPrecios(response.data);
       } catch (error) {
@@ -95,13 +122,13 @@ const ClientsScreen = () => {
       try {
         const response = await axios.get(`${process.env.REACT_APP_BACKEND_URL}/clientes/estadisticas`, {
           headers: {
-            Authorization: `Bearer ${token}`
-          }
+            Authorization: `Bearer ${token}`,
+          },
         });
         const estadisticas = response.data.reduce((acc, curr) => {
           acc[curr.cliente_id] = {
             total_gastado: curr.total_gastado_con_descuento || curr.total_gastado,
-            ticket_promedio: curr.ticket_promedio_con_descuento || curr.ticket_promedio
+            ticket_promedio: curr.ticket_promedio_con_descuento || curr.ticket_promedio,
           };
           return acc;
         }, {});
@@ -129,7 +156,8 @@ const ClientsScreen = () => {
         diasCartera: client.diasCartera,
         listaPreciosId: client.listaPreciosId,
         direccion: client.direccion,
-        ciudad: client.ciudad
+        ciudad: client.ciudad,
+        tipo: client.tipo, // Establecer tipo del cliente
       });
       setEditMode(true);
     } else {
@@ -143,7 +171,8 @@ const ClientsScreen = () => {
         diasCartera: '',
         listaPreciosId: '',
         direccion: '',
-        ciudad: ''
+        ciudad: '',
+        tipo: 'Persona Natural', // Campo tipo inicializado
       });
       setEditMode(false);
     }
@@ -193,6 +222,7 @@ const ClientsScreen = () => {
     formData.append('establecimiento', establecimiento);
     formData.append('direccion', newClient.direccion);
     formData.append('ciudad', newClient.ciudad);
+    formData.append('tipo', newClient.tipo); // Agregar tipo al formData
     if (newClient.rut) {
       formData.append('rut', newClient.rut);
     }
@@ -210,8 +240,8 @@ const ClientsScreen = () => {
           {
             headers: {
               Authorization: `Bearer ${token}`,
-              'Content-Type': 'multipart/form-data'
-            }
+              'Content-Type': 'multipart/form-data',
+            },
           }
         );
         setClients((prevClients) =>
@@ -228,13 +258,13 @@ const ClientsScreen = () => {
           {
             headers: {
               Authorization: `Bearer ${token}`,
-              'Content-Type': 'multipart/form-data'
-            }
+              'Content-Type': 'multipart/form-data',
+            },
           }
         );
         setClients((prevClients) => [
           ...prevClients,
-          { ...newClient, id: response.data.id, rut: response.data.rut }
+          { ...newClient, id: response.data.id, rut: response.data.rut },
         ]);
       }
       setOpen(false);
@@ -248,7 +278,8 @@ const ClientsScreen = () => {
         diasCartera: '',
         listaPreciosId: '',
         direccion: '',
-        ciudad: ''
+        ciudad: '',
+        tipo: 'Persona Natural', // Reiniciar campo tipo
       });
       setFileUploaded(false);
     } catch (error) {
@@ -294,14 +325,16 @@ const ClientsScreen = () => {
         sx={{
           backgroundColor: 'transparent',
           boxShadow: 'none',
-          borderBottom: '2px solid #5E55FE'
+          borderBottom: '2px solid #5E55FE',
         }}
       >
         <Tabs
           value={tabValue}
           onChange={handleTabChange}
           aria-label="client tabs"
-          TabIndicatorProps={{ style: { backgroundColor: '#5E55FE', height: '4px' } }}
+          TabIndicatorProps={{
+            style: { backgroundColor: '#5E55FE', height: '4px' },
+          }}
           sx={{
             '& .MuiTab-root': {
               textTransform: 'none',
@@ -333,7 +366,7 @@ const ClientsScreen = () => {
             backgroundColor: '#5E55FE',
             color: 'white',
             borderRadius: '10px',
-            '&:hover': { backgroundColor: '#7b45a1' }
+            '&:hover': { backgroundColor: '#7b45a1' },
           }}
         >
           Agregar Cliente
@@ -467,6 +500,20 @@ const ClientsScreen = () => {
                 ))}
               </Select>
             </FormControl>
+            <FormControl fullWidth sx={{ mt: 2 }}>
+              <InputLabel id="tipo-label">Tipo Cliente</InputLabel>
+              <Select
+                labelId="tipo-label"
+                name="tipo"
+                value={newClient.tipo}
+                onChange={handleChange}
+                label="Tipo"
+              >
+                <MenuItem value="Persona Natural">Persona Natural</MenuItem>
+                <MenuItem value="Empresa">Empresa</MenuItem>
+                <MenuItem value="Distribuidor">Distribuidor</MenuItem>
+              </Select>
+            </FormControl>
             <input
               accept="application/pdf"
               style={{ display: 'none' }}
@@ -483,7 +530,7 @@ const ClientsScreen = () => {
                   backgroundColor: '#5E55FE',
                   color: 'white',
                   borderRadius: '10px',
-                  '&:hover': { backgroundColor: '#7b45a1' }
+                  '&:hover': { backgroundColor: '#7b45a1' },
                 }}
               >
                 Subir RUT
@@ -511,7 +558,6 @@ const ClientsScreen = () => {
             <Table>
               <TableHead>
                 <TableRow>
-                  <StyledTableCell>ID</StyledTableCell>
                   <StyledTableCell>Nombre Comercial</StyledTableCell>
                   <StyledTableCell>Razón Social</StyledTableCell>
                   <StyledTableCell>Teléfono</StyledTableCell>
@@ -521,6 +567,7 @@ const ClientsScreen = () => {
                   <StyledTableCell>Lista de Precios</StyledTableCell>
                   <StyledTableCell>Dirección</StyledTableCell>
                   <StyledTableCell>Ciudad</StyledTableCell>
+                  <StyledTableCell>Tipo Cliente</StyledTableCell>
                   <StyledTableCell>Archivos</StyledTableCell>
                   <StyledTableCell>Ticket Promedio</StyledTableCell>
                   <StyledTableCell>Total Gastado</StyledTableCell>
@@ -533,7 +580,6 @@ const ClientsScreen = () => {
                     key={client.id}
                     onClick={() => handlePedidosDialogOpen(client)}
                   >
-                    <TableCell>{client.id}</TableCell>
                     <TableCell>{client.nombre}</TableCell>
                     <TableCell>{client.razon_social}</TableCell>
                     <TableCell>{client.telefono}</TableCell>
@@ -549,6 +595,7 @@ const ClientsScreen = () => {
                     </TableCell>
                     <TableCell>{client.direccion || 'N/A'}</TableCell>
                     <TableCell>{client.ciudad || 'N/A'}</TableCell>
+                    <TableCell>{client.tipo || 'N/A'}</TableCell> {/* Mostrar Tipo */}
                     <TableCell>
                       {client.rut ? (
                         <IconButton

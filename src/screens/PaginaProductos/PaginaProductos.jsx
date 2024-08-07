@@ -246,13 +246,11 @@ const PaginaProductos = () => {
         <TableHead>
           <TableRow>
             <StyledTableCell>Nombre</StyledTableCell>
+            <StyledTableCell>Costo</StyledTableCell>
             <StyledTableCell>Precio Base</StyledTableCell>
             <StyledTableCell>IVA</StyledTableCell>
             <StyledTableCell>IPO</StyledTableCell>
             <StyledTableCell>Precio Venta</StyledTableCell>
-            <StyledTableCell>Costo</StyledTableCell>
-            <StyledTableCell>Categoría</StyledTableCell>
-            <StyledTableCell>Subcategoría</StyledTableCell>
             <StyledTableCell>Acciones</StyledTableCell>
           </TableRow>
         </TableHead>
@@ -260,13 +258,11 @@ const PaginaProductos = () => {
           {filteredProductos.map((producto) => (
             <TableRow key={producto.id}>
               <TableCell>{producto.nombre}</TableCell>
+              <TableCell>{formatCurrency(producto.costo)}</TableCell>
               <TableCell>{formatCurrency(producto.precio_base)}</TableCell>
               <TableCell>5%</TableCell>
               <TableCell>{formatCurrency(producto.ipo)}</TableCell>
               <TableCell>{formatCurrency(producto.precio)}</TableCell>
-              <TableCell>{formatCurrency(producto.costo)}</TableCell>
-              <TableCell>{producto.categoria}</TableCell>
-              <TableCell>{producto.subcategoria}</TableCell>
               <TableCell>
                 <IconButton onClick={() => handleEdit(producto)}>
                   <EditIcon />

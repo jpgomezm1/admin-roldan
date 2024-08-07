@@ -297,9 +297,9 @@ const StockScreen = () => {
     if (stock > limite) {
       return { label: 'Abastecido', color: 'success' };
     } else if (stock > 0) {
-      return { label: 'Poco stock', color: 'warning' };
+      return { label: 'Bajo stock', color: 'error' };
     } else {
-      return { label: 'Agotado', color: 'error' };
+      return { label: 'Agotado', color: 'info' };
     }
   };
 
