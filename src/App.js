@@ -3,7 +3,7 @@ import { Box } from '@mui/material';
 import { createTheme, ThemeProvider } from '@mui/material/styles';
 import { BrowserRouter as Router, Route, Routes } from 'react-router-dom';
 import { useSelector } from 'react-redux';
-import './App.css'
+import './App.css';
 
 // Importamos los componentes
 import HomePage from './screens/HomePage/HomePage';
@@ -56,9 +56,9 @@ const ProtectedRoutes = () => {
   }
 
   return (
-    <Box sx={{ display: 'flex' }}>
-      <Navbar /> 
-      <Box component="main" sx={{ flexGrow: 1, p: 3 }}>
+    <Box sx={{ display: 'flex', justifyContent: 'center' }}> {/* Centrar contenido */}
+      <Navbar />
+      <Box component="main" sx={{ flexGrow: 1, p: 3, width: '67%', maxWidth: '1200px' }}> {/* Ajustar tamaño del contenedor */}
         <Routes>
           <Route path="/" element={<HomePage />} />
           <Route path="/orders" element={<DeliveryScreen />} />
@@ -92,6 +92,4 @@ const App = () => {
 };
 
 export default App;
-
-
 
