@@ -1,14 +1,18 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
-import { Container, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Paper, TextField, CircularProgress, IconButton, InputAdornment, Button, MenuItem, Select, FormControl, InputLabel, Dialog, DialogActions, DialogContent, DialogTitle, Chip, Grid} from '@mui/material';
+import { Container, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Paper, TextField, CircularProgress, IconButton, InputAdornment, Button, MenuItem, Select, FormControl, InputLabel, Dialog, DialogActions, DialogContent, DialogTitle, Chip, Grid, Menu } from '@mui/material';
 import EditIcon from '@mui/icons-material/Edit';
 import SaveIcon from '@mui/icons-material/Save';
 import CancelIcon from '@mui/icons-material/Cancel';
 import SearchIcon from '@mui/icons-material/Search';
 import AddIcon from '@mui/icons-material/Add';
+import DeleteIcon from '@mui/icons-material/Delete';
+import MoreVertIcon from '@mui/icons-material/MoreVert';
 import { styled } from '@mui/system';
 import InventoryDialog from './InventoryDialog';
 import MovimientosDialog from './MovimientosDialog';
+import ExecuteInventoryDialog from './ExecuteInventoryDialog';
+import InventoryRecordsDialog from './InventoryRecordsDialog';
 import { useSelector } from 'react-redux';
 import SummaryCard from './SummaryCard';
 import InventoryIcon from '@mui/icons-material/Inventory';
@@ -49,7 +53,34 @@ const StockScreen = () => {
   const [movimientosDialogOpen, setMovimientosDialogOpen] = useState(false);
   const [newBodegaDialogOpen, setNewBodegaDialogOpen] = useState(false);
   const [newBodegaName, setNewBodegaName] = useState('');
+  const [editBodegaDialogOpen, setEditBodegaDialogOpen] = useState(false);
+  const [editBodegaName, setEditBodegaName] = useState('');
+  const [bodegaIdToEdit, setBodegaIdToEdit] = useState(null);
+  const [deleteBodegaDialogOpen, setDeleteBodegaDialogOpen] = useState(false);
+  const [bodegaIdToDelete, setBodegaIdToDelete] = useState(null);
+  const [menuAnchorEl, setMenuAnchorEl] = useState(null);
+  const [selectedBodegaForMenu, setSelectedBodegaForMenu] = useState(null);
+  const [executeInventoryDialogOpen, setExecuteInventoryDialogOpen] = useState(false);
+  const [inventoryRecordsDialogOpen, setInventoryRecordsDialogOpen] = useState(false);
   const token = useSelector((state) => state.auth.token);
+
+  const handleInventoryRecordsDialogOpen = () => {
+    setInventoryRecordsDialogOpen(true);
+  };
+  
+  const handleInventoryRecordsDialogClose = () => {
+    setInventoryRecordsDialogOpen(false);
+  };
+
+
+  const handleExecuteInventoryOpen = () => {
+    setExecuteInventoryDialogOpen(true);
+  };
+
+  const handleExecuteInventoryClose = () => {
+    setExecuteInventoryDialogOpen(false);
+    fetchProductos(); // Actualizar productos después de ejecutar inventario
+  };
 
   useEffect(() => {
     fetchBodegas();
@@ -213,35 +244,74 @@ const StockScreen = () => {
     }
   };
 
-  const handleSaveMovement = async (
-    tipoMovimiento,
-    comentario,
-    cambiosStock,
-    bodegaOrigenId,
-    bodegaDestinoId
-  ) => {
-    try {
-      const response = await axios.post(
-        `${apiBaseUrl}/inventarios/movimiento`,
-        {
-          tipo: tipoMovimiento,
-          comentario: comentario,
-          cambiosStock: cambiosStock,
-          bodegaOrigenId: bodegaOrigenId,
-          bodegaDestinoId: bodegaDestinoId,
-        },
-        {
+  const handleEditBodegaDialogOpen = (bodega) => {
+    setEditBodegaName(bodega.nombre);
+    setBodegaIdToEdit(bodega.id);
+    setEditBodegaDialogOpen(true);
+    handleMenuClose();  // Cerrar el menú cuando se hace clic en editar
+  };
+
+  const handleEditBodegaDialogClose = () => {
+    setEditBodegaDialogOpen(false);
+    setEditBodegaName('');
+    setBodegaIdToEdit(null);
+  };
+
+  const handleSaveEditBodega = async () => {
+    if (editBodegaName.trim() !== '') {
+      try {
+        await axios.put(`${apiBaseUrl}/bodegas/${bodegaIdToEdit}`, 
+        { nombre: editBodegaName }, {
           headers: {
             Authorization: `Bearer ${token}`,
           },
-        }
-      );
-      alert(response.data.mensaje);
-      fetchProductos();
-    } catch (error) {
-      console.error('Error al registrar los movimientos de inventario', error);
-      alert('Error al registrar los movimientos de inventario');
+        });
+        fetchBodegas();
+        setEditBodegaDialogOpen(false);
+        setEditBodegaName('');
+        setBodegaIdToEdit(null);
+      } catch (error) {
+        console.error('Error al editar la bodega', error);
+      }
     }
+  };
+
+  const handleDeleteBodegaDialogOpen = (bodegaId) => {
+    setBodegaIdToDelete(bodegaId);
+    setDeleteBodegaDialogOpen(true);
+    handleMenuClose();  // Cerrar el menú cuando se hace clic en eliminar
+  };
+
+  const handleDeleteBodegaDialogClose = () => {
+    setDeleteBodegaDialogOpen(false);
+    setBodegaIdToDelete(null);
+  };
+
+  const handleDeleteBodega = async () => {
+    if (bodegaIdToDelete) {
+      try {
+        await axios.delete(`${apiBaseUrl}/bodegas/${bodegaIdToDelete}`, {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        });
+        fetchBodegas();
+        setDeleteBodegaDialogOpen(false);
+        setBodegaIdToDelete(null);
+      } catch (error) {
+        console.error('Error al eliminar la bodega', error);
+      }
+    }
+  };
+
+  const handleMenuClick = (event, bodega) => {
+    setMenuAnchorEl(event.currentTarget);
+    setSelectedBodegaForMenu(bodega);
+  };
+
+  const handleMenuClose = () => {
+    setMenuAnchorEl(null);
+    setSelectedBodegaForMenu(null);
   };
 
   const calcularStockTotal = (producto) => {
@@ -255,12 +325,37 @@ const StockScreen = () => {
   };
 
   const calcularLimiteStockTotal = (producto) => {
-    // Ensure stockLimits are summed as integers
     return bodegas.reduce((total, bodega) => {
       const limitKey = `${producto.id}-${bodega.id}`;
-      const stockLimit = parseInt(stockLimits[limitKey] || 50); // Default to 50 if undefined, ensuring it's treated as an integer
+      const stockLimit = parseInt(stockLimits[limitKey] || 50);
       return total + stockLimit;
     }, 0);
+  };
+
+  const handleSaveMovement = async (tipoMovimiento, comentario, cambiosStock, bodegaOrigenId, bodegaDestinoId, nombreUsuario) => {
+    try {
+      const response = await axios.post(
+        `${apiBaseUrl}/inventarios/movimiento`,
+        {
+          tipo: tipoMovimiento,
+          comentario: comentario,
+          cambiosStock: cambiosStock,
+          bodegaOrigenId: bodegaOrigenId,
+          bodegaDestinoId: bodegaDestinoId,
+          usuario: nombreUsuario  // Aquí se pasa el nombre del usuario
+        },
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
+      alert(response.data.mensaje);
+      fetchProductos(); // Actualizar los productos después de guardar el movimiento
+    } catch (error) {
+      console.error('Error al registrar los movimientos de inventario', error);
+      alert('Error al registrar los movimientos de inventario');
+    }
   };
 
   const calcularTotales = () => {
@@ -358,7 +453,7 @@ const StockScreen = () => {
                             : producto.stocks &&
                               producto.stocks[bodegaSeleccionada] !== undefined
                             ? producto.stocks[bodegaSeleccionada]
-                            : calcularStockTotal(producto) // Calculate total stock for 'general' case
+                            : calcularStockTotal(producto)
                         }
                         onChange={(e) =>
                           handleStockChange(producto.id, e.target.value)
@@ -389,7 +484,7 @@ const StockScreen = () => {
                       </IconButton>
                     </>
                   ) : bodegaSeleccionada === 'general' ? (
-                    stockTotal // Show total stock for 'general'
+                    stockTotal
                   ) : (
                     producto.stocks[bodegaSeleccionada] || 0
                   )}
@@ -417,6 +512,64 @@ const StockScreen = () => {
         </TableBody>
       </Table>
     </TableContainer>
+  );
+
+  const renderBodegaMenu = () => (
+    <Menu
+      anchorEl={menuAnchorEl}
+      open={Boolean(menuAnchorEl)}
+      onClose={handleMenuClose}
+      anchorOrigin={{
+        vertical: 'bottom',
+        horizontal: 'center',
+      }}
+      transformOrigin={{
+        vertical: 'top',
+        horizontal: 'center',
+      }}
+    >
+      <MenuItem onClick={() => handleEditBodegaDialogOpen(selectedBodegaForMenu)}>
+        <EditIcon fontSize="small" /> Editar
+      </MenuItem>
+      <MenuItem onClick={() => handleDeleteBodegaDialogOpen(selectedBodegaForMenu.id)}>
+        <DeleteIcon fontSize="small" /> Eliminar
+      </MenuItem>
+    </Menu>
+  );
+
+  const renderBodegaSelector = () => (
+    <FormControl variant="outlined" fullWidth>
+      <InputLabel>Bodega</InputLabel>
+      <Select
+        value={bodegaSeleccionada}
+        onChange={handleBodegaChange}
+        label="Bodega"
+        renderValue={(selected) => {
+          const selectedBodega = bodegas.find((bodega) => bodega.id === selected);
+          return selectedBodega ? selectedBodega.nombre : 'General';
+        }}
+      >
+        <MenuItem value="general">General</MenuItem>
+        {bodegas.map((bodega) => (
+          <MenuItem key={bodega.id} value={bodega.id}>
+            <Grid container justifyContent="space-between" alignItems="center">
+              <Grid item>{bodega.nombre}</Grid>
+              <Grid item>
+                <IconButton
+                  size="small"
+                  onClick={(e) => handleMenuClick(e, bodega)}
+                >
+                  <MoreVertIcon fontSize="small" />
+                </IconButton>
+              </Grid>
+            </Grid>
+          </MenuItem>
+        ))}
+        <MenuItem value="" onClick={handleNewBodegaDialogOpen}>
+          <AddIcon /> Agregar nueva bodega
+        </MenuItem>
+      </Select>
+    </FormControl>
   );
 
   return (
@@ -499,24 +652,8 @@ const StockScreen = () => {
           </FormControl>
         </Grid>
         <Grid item xs={12} sm={4}>
-          <FormControl variant="outlined" fullWidth>
-            <InputLabel>Bodega</InputLabel>
-            <Select
-              value={bodegaSeleccionada}
-              onChange={handleBodegaChange}
-              label="Bodega"
-            >
-              <MenuItem value="general">General</MenuItem>
-              {bodegas.map((bodega) => (
-                <MenuItem key={bodega.id} value={bodega.id}>
-                  {bodega.nombre}
-                </MenuItem>
-              ))}
-              <MenuItem value="" onClick={handleNewBodegaDialogOpen}>
-                <AddIcon /> Agregar nueva bodega
-              </MenuItem>
-            </Select>
-          </FormControl>
+          {renderBodegaSelector()}
+          {renderBodegaMenu()}
         </Grid>
       </Grid>
       <Button
@@ -548,6 +685,37 @@ const StockScreen = () => {
       >
         Ver Movimientos de Inventario
       </Button>
+      <Button
+        variant="contained"
+        onClick={handleExecuteInventoryOpen}
+        size="medium"
+        sx={{
+          my: 2,
+          ml: 1,
+          backgroundColor: '#25D366',
+          color: 'white',
+          borderRadius: '10px',
+          '&:hover': { backgroundColor: '#D9FDD3' },
+        }}
+      >
+        Ejecutar Inventario
+      </Button>
+
+      <Button
+        variant="contained"
+        onClick={handleInventoryRecordsDialogOpen}
+        size="medium"
+        sx={{
+          my: 2,
+          ml: 1,
+          backgroundColor: '#25D366',
+          color: 'white',
+          borderRadius: '10px',
+          '&:hover': { backgroundColor: '#D9FDD3' },
+        }}
+      >
+        Ver Registros de Inventarios
+      </Button>
       {loading ? (
         <CircularProgress />
       ) : (
@@ -563,6 +731,17 @@ const StockScreen = () => {
       <MovimientosDialog
         open={movimientosDialogOpen}
         handleClose={handleMovimientosDialogClose}
+      />
+      <ExecuteInventoryDialog
+        open={executeInventoryDialogOpen}
+        handleClose={handleExecuteInventoryClose}
+        bodegas={bodegas}
+        productos={productos}
+        onInventoryUpdate={fetchProductos}
+      />
+      <InventoryRecordsDialog
+        open={inventoryRecordsDialogOpen}
+        handleClose={handleInventoryRecordsDialogClose}
       />
       <Dialog open={newBodegaDialogOpen} onClose={handleNewBodegaDialogClose}>
         <DialogTitle>Agregar Nueva Bodega</DialogTitle>
@@ -585,8 +764,48 @@ const StockScreen = () => {
           </Button>
         </DialogActions>
       </Dialog>
+      <Dialog open={editBodegaDialogOpen} onClose={handleEditBodegaDialogClose}>
+        <DialogTitle>Editar Bodega</DialogTitle>
+        <DialogContent>
+          <TextField
+            autoFocus
+            margin="dense"
+            label="Nombre de la Bodega"
+            fullWidth
+            value={editBodegaName}
+            onChange={(e) => setEditBodegaName(e.target.value)}
+          />
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={handleEditBodegaDialogClose} color="secondary">
+            Cancelar
+          </Button>
+          <Button onClick={handleSaveEditBodega} color="primary">
+            Guardar
+          </Button>
+        </DialogActions>
+      </Dialog>
+      <Dialog
+        open={deleteBodegaDialogOpen}
+        onClose={handleDeleteBodegaDialogClose}
+      >
+        <DialogTitle>Confirmar Eliminación</DialogTitle>
+        <DialogContent>
+          ¿Estás seguro de que deseas eliminar esta bodega?
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={handleDeleteBodegaDialogClose} color="secondary">
+            Cancelar
+          </Button>
+          <Button onClick={handleDeleteBodega} color="error">
+            Eliminar
+          </Button>
+        </DialogActions>
+      </Dialog>
     </Container>
   );
 };
 
 export default StockScreen;
+
+

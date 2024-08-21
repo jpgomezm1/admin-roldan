@@ -3,7 +3,7 @@ import {
   Dialog, DialogTitle, DialogContent, DialogActions, Button, TextField,
   FormControl, InputLabel, Select, MenuItem, Grid, Typography, IconButton,
   InputAdornment, Table, TableBody, TableCell, TableHead, TableRow, Paper,
-  TableContainer
+  TableContainer, Box
 } from '@mui/material';
 import AddIcon from '@mui/icons-material/Add';
 import RemoveIcon from '@mui/icons-material/Remove';
@@ -15,7 +15,8 @@ const SecondaryColor = "#333";
 
 const StyledDialogTitle = styled(DialogTitle)({
   color: PrimaryColor,
-  fontWeight: 'bold'
+  fontWeight: 'bold',
+  borderBottom: `2px solid ${PrimaryColor}`
 });
 
 const StyledButton = styled(Button)({
@@ -40,7 +41,7 @@ const InventoryDialog = ({ open, handleClose, productos, handleSaveMovement, bod
   const [search, setSearch] = useState('');
   const [bodegaOrigen, setBodegaOrigen] = useState('');
   const [bodegaDestino, setBodegaDestino] = useState('');
-  const [nombreUsuario, setNombreUsuario] = useState(''); // Estado para el nombre del usuario
+  const [nombreUsuario, setNombreUsuario] = useState(''); 
 
   const handleTipoMovimientoChange = (event) => {
     setTipoMovimiento(event.target.value);
@@ -105,38 +106,44 @@ const InventoryDialog = ({ open, handleClose, productos, handleSaveMovement, bod
             <MenuItem value="traslado">Traslado</MenuItem>
           </Select>
         </FormControl>
+
         {tipoMovimiento === 'traslado' && (
-          <>
-            <FormControl fullWidth margin="normal">
-              <InputLabel>Bodega de Origen</InputLabel>
-              <Select
-                value={bodegaOrigen}
-                onChange={(event) => setBodegaOrigen(event.target.value)}
-                label="Bodega de Origen"
-              >
-                {bodegas.map((bodega) => (
-                  <MenuItem key={bodega.id} value={bodega.id}>
-                    {bodega.nombre}
-                  </MenuItem>
-                ))}
-              </Select>
-            </FormControl>
-            <FormControl fullWidth margin="normal">
-              <InputLabel>Bodega de Destino</InputLabel>
-              <Select
-                value={bodegaDestino}
-                onChange={(event) => setBodegaDestino(event.target.value)}
-                label="Bodega de Destino"
-              >
-                {bodegas.map((bodega) => (
-                  <MenuItem key={bodega.id} value={bodega.id}>
-                    {bodega.nombre}
-                  </MenuItem>
-                ))}
-              </Select>
-            </FormControl>
-          </>
+          <Grid container spacing={2}>
+            <Grid item xs={6}>
+              <FormControl fullWidth margin="normal">
+                <InputLabel>Bodega de Origen</InputLabel>
+                <Select
+                  value={bodegaOrigen}
+                  onChange={(event) => setBodegaOrigen(event.target.value)}
+                  label="Bodega de Origen"
+                >
+                  {bodegas.map((bodega) => (
+                    <MenuItem key={bodega.id} value={bodega.id}>
+                      {bodega.nombre}
+                    </MenuItem>
+                  ))}
+                </Select>
+              </FormControl>
+            </Grid>
+            <Grid item xs={6}>
+              <FormControl fullWidth margin="normal">
+                <InputLabel>Bodega de Destino</InputLabel>
+                <Select
+                  value={bodegaDestino}
+                  onChange={(event) => setBodegaDestino(event.target.value)}
+                  label="Bodega de Destino"
+                >
+                  {bodegas.map((bodega) => (
+                    <MenuItem key={bodega.id} value={bodega.id}>
+                      {bodega.nombre}
+                    </MenuItem>
+                  ))}
+                </Select>
+              </FormControl>
+            </Grid>
+          </Grid>
         )}
+
         {tipoMovimiento !== 'traslado' && (
           <FormControl fullWidth margin="normal">
             <InputLabel>Bodega</InputLabel>
@@ -153,6 +160,7 @@ const InventoryDialog = ({ open, handleClose, productos, handleSaveMovement, bod
             </Select>
           </FormControl>
         )}
+
         <TextField
           variant="outlined"
           placeholder="Buscar producto"
@@ -168,28 +176,28 @@ const InventoryDialog = ({ open, handleClose, productos, handleSaveMovement, bod
             ),
           }}
         />
+
         <Grid container spacing={2} style={{ marginTop: '16px', marginBottom: '16px' }}>
           {search && filteredProductos.length > 0 ? (
             filteredProductos.map(producto => (
               <Grid item xs={12} key={producto.id}>
-                <Paper elevation={3} style={{ padding: '8px' }}>
-                  <Grid container alignItems="center" justifyContent="space-between">
-                    <Typography>{producto.nombre}</Typography>
-                    <IconButton onClick={() => handleAddProduct(producto.id)} color="primary">
-                      <AddIcon />
-                    </IconButton>
-                  </Grid>
+                <Paper elevation={3} sx={{ padding: '8px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <Typography>{producto.nombre}</Typography>
+                  <IconButton onClick={() => handleAddProduct(producto.id)} color="primary">
+                    <AddIcon />
+                  </IconButton>
                 </Paper>
               </Grid>
             ))
           ) : search ? (
-            <Typography variant="body2" color="textSecondary" style={{ marginLeft: '16px' }}>
+            <Typography variant="body2" color="textSecondary" sx={{ marginLeft: '16px' }}>
               No se encontraron productos.
             </Typography>
           ) : null}
         </Grid>
+
         {selectedProducts.length > 0 && (
-          <TableContainer component={Paper} style={{ marginTop: '16px', marginBottom: '16px' }}>
+          <TableContainer component={Paper} sx={{ marginTop: '16px', marginBottom: '16px' }}>
             <Table>
               <TableHead>
                 <TableRow>
@@ -224,6 +232,7 @@ const InventoryDialog = ({ open, handleClose, productos, handleSaveMovement, bod
             </Table>
           </TableContainer>
         )}
+
         <TextField
           label="Comentario"
           multiline
@@ -243,7 +252,9 @@ const InventoryDialog = ({ open, handleClose, productos, handleSaveMovement, bod
       </DialogContent>
       <DialogActions>
         <Button onClick={handleClose}>Cancelar</Button>
-        <StyledButton onClick={handleSave} color="primary">Guardar</StyledButton>
+        <StyledButton onClick={handleSave} color="primary" disabled={!nombreUsuario || selectedProducts.length === 0}>
+          Guardar
+        </StyledButton>
       </DialogActions>
     </Dialog>
   );

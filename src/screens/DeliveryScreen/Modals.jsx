@@ -102,7 +102,7 @@ const Modals = ({
                     </TableRow>
                   ))}
                   <TableRow>
-                    <TotalTableCell>Tota</TotalTableCell>
+                    <TotalTableCell>Total</TotalTableCell>
                     <TotalTableCell align="right">{totalProductos}</TotalTableCell>
                     <TotalTableCell align="right">{formatCurrency(totalPedido)}</TotalTableCell>
                   </TableRow>
@@ -117,3 +117,5 @@ const Modals = ({
 };
 
 export default Modals;
+
+

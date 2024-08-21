@@ -8,56 +8,27 @@ import {
   DialogContent,
   DialogTitle,
   TextField,
-  Table,
-  TableBody,
-  TableCell,
-  TableContainer,
-  TableHead,
-  TableRow,
-  Paper,
-  IconButton,
-  Typography,
-  Select,
-  MenuItem,
   FormControl,
   InputLabel,
+  Select,
+  MenuItem,
   Tabs,
   Tab,
   AppBar,
   CircularProgress,
   Switch,
+  TablePagination,
+  Typography,
+  IconButton,
 } from '@mui/material';
 import AddIcon from '@mui/icons-material/Add';
-import { useSelector } from 'react-redux';
-import { styled } from '@mui/system';
 import CloseIcon from '@mui/icons-material/Close';
-import PictureAsPdfIcon from '@mui/icons-material/PictureAsPdf';
-import EditIcon from '@mui/icons-material/Edit';
+import { useSelector } from 'react-redux';
 import EquipoComercial from './EquipoComercial';
 import TabPanel from '../GastosScreen/TabPanel';
 import PedidosClienteDialog from './PedidosClienteDialog';
-
-const StyledTableCell = styled(TableCell)(({ theme }) => ({
-  backgroundColor: theme.palette.common.black,
-  color: theme.palette.common.white,
-  fontWeight: 'bold',
-}));
-
-const StyledTableRow = styled(TableRow)(({ theme }) => ({
-  '&:hover': {
-    backgroundColor: theme.palette.action.hover,
-    cursor: 'pointer',
-  },
-}));
-
-const formatCurrency = (value) => {
-  return new Intl.NumberFormat('es-CO', {
-    style: 'currency',
-    currency: 'COP',
-    minimumFractionDigits: 0,
-    maximumFractionDigits: 0,
-  }).format(value);
-};
+import CargaMasivaClientes from './CargaMasivaClientes';
+import ClientTable from './ClientTable';  // Importa el nuevo componente
 
 const ClientsScreen = () => {
   const [clients, setClients] = useState([]);
@@ -77,7 +48,7 @@ const ClientsScreen = () => {
     listaPreciosId: '',
     direccion: '',
     ciudad: '',
-    tipo: 'Persona Natural', // Campo tipo inicializado
+    tipo: 'Persona Natural',
   });
   const [fileUploaded, setFileUploaded] = useState(false);
   const [listasPrecios, setListasPrecios] = useState([]);
@@ -85,6 +56,9 @@ const ClientsScreen = () => {
   const [loading, setLoading] = useState(false);
   const [sortColumn, setSortColumn] = useState('ticket_promedio');
   const [sortOrder, setSortOrder] = useState('asc');
+  const [page, setPage] = useState(0);
+  const [rowsPerPage, setRowsPerPage] = useState(10);
+  const [totalClients, setTotalClients] = useState(0);
 
   const token = useSelector((state) => state.auth.token);
   const establecimiento = useSelector((state) => state.auth.establecimiento);
@@ -94,11 +68,16 @@ const ClientsScreen = () => {
       setLoading(true);
       try {
         const response = await axios.get(`${process.env.REACT_APP_BACKEND_URL}/clientes`, {
+          params: {
+            page: page + 1,
+            per_page: rowsPerPage,
+          },
           headers: {
             Authorization: `Bearer ${token}`,
           },
         });
-        setClients(response.data);
+        setClients(response.data.clientes);
+        setTotalClients(response.data.total);
       } catch (error) {
         console.error('Error fetching clients:', error);
       }
@@ -141,7 +120,7 @@ const ClientsScreen = () => {
     fetchClients();
     fetchListasPrecios();
     fetchEstadisticasClientes();
-  }, [token]);
+  }, [token, page, rowsPerPage]);
 
   const handleOpen = (client = null) => {
     if (client) {
@@ -157,7 +136,7 @@ const ClientsScreen = () => {
         listaPreciosId: client.listaPreciosId,
         direccion: client.direccion,
         ciudad: client.ciudad,
-        tipo: client.tipo, // Establecer tipo del cliente
+        tipo: client.tipo,
       });
       setEditMode(true);
     } else {
@@ -172,7 +151,7 @@ const ClientsScreen = () => {
         listaPreciosId: '',
         direccion: '',
         ciudad: '',
-        tipo: 'Persona Natural', // Campo tipo inicializado
+        tipo: 'Persona Natural',
       });
       setEditMode(false);
     }
@@ -222,7 +201,7 @@ const ClientsScreen = () => {
     formData.append('establecimiento', establecimiento);
     formData.append('direccion', newClient.direccion);
     formData.append('ciudad', newClient.ciudad);
-    formData.append('tipo', newClient.tipo); // Agregar tipo al formData
+    formData.append('tipo', newClient.tipo);
     if (newClient.rut) {
       formData.append('rut', newClient.rut);
     }
@@ -279,7 +258,7 @@ const ClientsScreen = () => {
         listaPreciosId: '',
         direccion: '',
         ciudad: '',
-        tipo: 'Persona Natural', // Reiniciar campo tipo
+        tipo: 'Persona Natural',
       });
       setFileUploaded(false);
     } catch (error) {
@@ -301,6 +280,15 @@ const ClientsScreen = () => {
 
   const handleSortOrderChange = () => {
     setSortOrder((prevOrder) => (prevOrder === 'asc' ? 'desc' : 'asc'));
+  };
+
+  const handleChangePage = (event, newPage) => {
+    setPage(newPage);
+  };
+
+  const handleChangeRowsPerPage = (event) => {
+    setRowsPerPage(parseInt(event.target.value, 10));
+    setPage(0); // Reset page to 0 when rows per page changes
   };
 
   const sortedClients = clients.slice().sort((a, b) => {
@@ -389,6 +377,12 @@ const ClientsScreen = () => {
           <Typography>Ascendente</Typography>
           <Switch checked={sortOrder === 'desc'} onChange={handleSortOrderChange} />
           <Typography>Descendente</Typography>
+        </Box>
+
+        {/* Componente para carga masiva de clientes */}
+        <Box sx={{ mt: 4 }}>
+          <Typography variant="h6" sx={{ mb: 2 }}>Carga Masiva de Clientes</Typography>
+          <CargaMasivaClientes />
         </Box>
 
         <Dialog open={open} onClose={handleClose}>
@@ -554,92 +548,23 @@ const ClientsScreen = () => {
         {loading ? (
           <CircularProgress />
         ) : (
-          <TableContainer component={Paper} sx={{ mt: 2 }}>
-            <Table>
-              <TableHead>
-                <TableRow>
-                  <StyledTableCell>Nombre Comercial</StyledTableCell>
-                  <StyledTableCell>Razón Social</StyledTableCell>
-                  <StyledTableCell>Teléfono</StyledTableCell>
-                  <StyledTableCell>Correo</StyledTableCell>
-                  <StyledTableCell>NIT</StyledTableCell>
-                  <StyledTableCell>Días de Cartera</StyledTableCell>
-                  <StyledTableCell>Lista de Precios</StyledTableCell>
-                  <StyledTableCell>Dirección</StyledTableCell>
-                  <StyledTableCell>Ciudad</StyledTableCell>
-                  <StyledTableCell>Tipo Cliente</StyledTableCell>
-                  <StyledTableCell>Archivos</StyledTableCell>
-                  <StyledTableCell>Ticket Promedio</StyledTableCell>
-                  <StyledTableCell>Total Gastado</StyledTableCell>
-                  <StyledTableCell>Acciones</StyledTableCell>
-                </TableRow>
-              </TableHead>
-              <TableBody>
-                {sortedClients.map((client) => (
-                  <StyledTableRow
-                    key={client.id}
-                    onClick={() => handlePedidosDialogOpen(client)}
-                  >
-                    <TableCell>{client.nombre}</TableCell>
-                    <TableCell>{client.razon_social}</TableCell>
-                    <TableCell>{client.telefono}</TableCell>
-                    <TableCell>{client.correo}</TableCell>
-                    <TableCell>{client.nit || 'N/A'}</TableCell>
-                    <TableCell>{client.diasCartera || 'N/A'}</TableCell>
-                    <TableCell>
-                      {client.listaPreciosId
-                        ? listasPrecios.find(
-                            (lista) => lista.id === client.listaPreciosId
-                          )?.nombre
-                        : 'Ninguna'}
-                    </TableCell>
-                    <TableCell>{client.direccion || 'N/A'}</TableCell>
-                    <TableCell>{client.ciudad || 'N/A'}</TableCell>
-                    <TableCell>{client.tipo || 'N/A'}</TableCell> {/* Mostrar Tipo */}
-                    <TableCell>
-                      {client.rut ? (
-                        <IconButton
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            handleDownload(client.rut);
-                          }}
-                        >
-                          <PictureAsPdfIcon />
-                        </IconButton>
-                      ) : (
-                        'N/A'
-                      )}
-                    </TableCell>
-                    <TableCell>
-                      {estadisticasClientes[client.id]
-                        ? formatCurrency(
-                            estadisticasClientes[client.id].ticket_promedio
-                          )
-                        : 'N/A'}
-                    </TableCell>
-                    <TableCell>
-                      {estadisticasClientes[client.id]
-                        ? formatCurrency(
-                            estadisticasClientes[client.id].total_gastado
-                          )
-                        : 'N/A'}
-                    </TableCell>
-                    <TableCell>
-                      <IconButton
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          handleOpen(client);
-                        }}
-                      >
-                        <EditIcon />
-                      </IconButton>
-                    </TableCell>
-                  </StyledTableRow>
-                ))}
-              </TableBody>
-            </Table>
-          </TableContainer>
+          <ClientTable
+            clients={sortedClients}
+            listasPrecios={listasPrecios}
+            estadisticasClientes={estadisticasClientes}
+            handlePedidosDialogOpen={handlePedidosDialogOpen}
+            handleOpen={handleOpen}
+            handleDownload={handleDownload}
+          />
         )}
+        <TablePagination
+          component="div"
+          count={totalClients}
+          page={page}
+          onPageChange={handleChangePage}
+          rowsPerPage={rowsPerPage}
+          onRowsPerPageChange={handleChangeRowsPerPage}
+        />
       </TabPanel>
       <TabPanel value={tabValue} index={1}>
         <EquipoComercial />
