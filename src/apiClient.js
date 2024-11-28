@@ -4,11 +4,13 @@ import { login, logout } from './redux/authSlice';
 
 const refreshToken = async (dispatch) => {
   try {
+    console.log('Refreshing token', localStorage.getItem('refresh_token'));
     const response = await axios.post(`${process.env.REACT_APP_BACKEND_URL}/refresh`, {}, {
       headers: {
         Authorization: `Bearer ${localStorage.getItem('refresh_token')}`
       }
     });
+
     const { access_token } = response.data;
     dispatch(login({ token: access_token }));
     localStorage.setItem('access_token', access_token);

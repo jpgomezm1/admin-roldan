@@ -29,6 +29,7 @@ const LoginForm = () => {
       console.error('Error during login', error);
       setSnackbarMessage('Usuario o contraseña incorrectos');
       setSnackbarOpen(true);
+      // Print the endpoint 
     }
   };
 

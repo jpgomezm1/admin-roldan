@@ -8,10 +8,12 @@ import {
   TableRow,
   Paper,
   IconButton,
+  Button,
 } from '@mui/material';
 import { styled } from '@mui/system';
 import PictureAsPdfIcon from '@mui/icons-material/PictureAsPdf';
 import EditIcon from '@mui/icons-material/Edit';
+import SpecialPricesDialog from './SpecialPricesDialog';
 
 const StyledTableCell = styled(TableCell)(({ theme }) => ({
   backgroundColor: theme.palette.common.black,
@@ -36,7 +38,27 @@ const formatCurrency = (value) => {
 };
 
 const ClientTable = ({ clients, listasPrecios, estadisticasClientes, handlePedidosDialogOpen, handleOpen, handleDownload }) => {
+  const [openDialog, setOpenDialog] = React.useState(false);
+  const [client, setClient] = React.useState(null);
+  const [specialPrices, setSpecialPrices] = React.useState([]);
+
+  const handleOpenDialog = (client) => {
+    setClient(client);
+    setSpecialPrices(client.preciosEspeciales || []);
+    setOpenDialog(true);
+  };
+
+  const handleCloseDialog = () => {
+    setOpenDialog(false);
+    setClient(null);
+  }
+
+  const handleAddProduct = (clientId, product) => {
+    setSpecialPrices([...specialPrices, product]);
+  };
+
   return (
+    <>
     <TableContainer component={Paper}>
       <Table>
         <TableHead>
@@ -48,6 +70,7 @@ const ClientTable = ({ clients, listasPrecios, estadisticasClientes, handlePedid
             <StyledTableCell>NIT/CC</StyledTableCell>
             <StyledTableCell>Días de Cartera</StyledTableCell>
             <StyledTableCell>Lista de Precios</StyledTableCell>
+            <StyledTableCell>Precios Especiales</StyledTableCell>
             <StyledTableCell>Dirección</StyledTableCell>
             <StyledTableCell>Ciudad</StyledTableCell>
             <StyledTableCell>Tipo Cliente</StyledTableCell>
@@ -75,6 +98,18 @@ const ClientTable = ({ clients, listasPrecios, estadisticasClientes, handlePedid
                       (lista) => lista.id === client.listaPreciosId
                     )?.nombre
                   : 'Ninguna'}
+              </TableCell>
+              <TableCell>
+                <Button
+                  variant="contained"
+                  color="primary"
+                  onClick={ (e) => {
+                    e.stopPropagation();
+                    handleOpenDialog(client);
+                  }}
+                >
+                  Ver
+                </Button>
               </TableCell>
               <TableCell>{client.direccion || 'N/A'}</TableCell>
               <TableCell>{client.ciudad || 'N/A'}</TableCell>
@@ -122,6 +157,16 @@ const ClientTable = ({ clients, listasPrecios, estadisticasClientes, handlePedid
         </TableBody>
       </Table>
     </TableContainer>
+    {client && (
+      <SpecialPricesDialog
+        open={openDialog}
+        onClose={handleCloseDialog}
+        client={client}
+        specialPrices={specialPrices}
+        onAddProduct={handleAddProduct}
+      />
+    )}
+    </>
   );
 };
 
